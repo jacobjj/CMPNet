@@ -1,0 +1,14 @@
+version: '2.3'
+services:
+  master:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    runtime: nvidia
+    image: cmpnet
+    # environment:
+      # - "NVIDIA_VISIBLE_DEVICES=2"
+    volumes:
+      - "${HOME}/CMPNet/src:/root/code/cmpnet/src"
+      - "/tmp/data:/root/code/data"
+    command: bash
