@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM rlplayground/cuda9_cudnn7:latest
 
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 
@@ -12,18 +12,21 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda2-4.6.14-Linux-x86
     /bin/bash ~/miniconda.sh -b -p /opt/conda && \
     rm ~/miniconda.sh && \
     ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
-    echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
-    echo "conda activate base" >> ~/.bashrc && \
+    echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc &&\
     find /opt/conda/ -follow -type f -name '*.a' -delete && \
     find /opt/conda/ -follow -type f -name '*.js.map' -delete && \
-  /opt/conda/bin/conda clean -afy
+    /opt/conda/bin/conda clean -afy
+
+
+ENV PATH /opt/conda/bin:$PATH
 
 CMD mkdir /root/code
 WORKDIR /root/code
 # Add codebase stub
 CMD mkdir /root/code/cmpnet
-ADD requirements.txt /root/code/cmpnet/requirements.txt
-RUN conda create -n cmpnet -f /root/code/cmpnet/requirements.txt
+ADD requirements.txt /root/code/cmpnet/requirement.txt
+ADD environment.yml /root/code/cmpnet/environment.yml
+RUN conda env create -f /root/code/cmpnet/environment.yml
 RUN echo "source activate cmpnet" >> /root/.bashrc
 ENV BASH_ENV /root/.bashrc
 
