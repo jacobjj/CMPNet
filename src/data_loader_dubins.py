@@ -30,7 +30,7 @@ def load_dataset(N=10000):
     : return array(N,28000),array(N,3),array(N,3): point-cloud,inputs and target nodes
     """
     obs = np.zeros((N, 2800))
-    inputs = np.zeros((N, 3))
+    inputs = np.zeros((N, 6))
     targets = np.zeros((N, 3))
     i = 0
     done = False
@@ -46,20 +46,22 @@ def load_dataset(N=10000):
 
     if not seeds:
         print("Check folder location")
-    # Load point cloud, points and target information
-    while not done:
-        for s in seeds:
-            obs_pc = np.load(osp.join(pc_folder, 'pc_{}.npy'.format(s)))
-            traj = np.load(osp.join(prune_folder, 'traj_{}.npy'.format(s)))
-            for j, _ in enumerate(traj[:-1]):
-                obs[i, :] = obs_pc.ravel()
-                inputs[i, :] = traj[j]
-                targets[i, :] = traj[j + 1]
-                i += 1
-                if i == N:
-                    done = True
-                    break
-            if done:
+        # Load point cloud, points and target information
+    for s in seeds:
+        obs_pc = np.load(osp.join(pc_folder, 'pc_{}.npy'.format(s)))
+        traj = np.load(osp.join(prune_folder, 'traj_{}.npy'.format(s)))
+        for j, _ in enumerate(traj[:-1]):
+            obs[i, :] = obs_pc.ravel()
+            # Current node and goal location
+            inputs[i, :] = np.concatenate((traj[j], traj[-1]))
+            targets[i, :] = traj[j + 1]
+            i += 1
+            if i == N:
+                done = True
                 break
+        if done:
+            break
+    if not done:
+        print("Not enough samples")
 
     return obs, inputs, targets
