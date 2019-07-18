@@ -85,7 +85,7 @@ def main(args):
         unnormalize = utility_r2d.unnormalize
         CAE = CAE_2d
         MLP = model_c2d_simple.MLP
-        args.world_size = [2.75, 2.75, np.pi / 2]
+        world_size = [2.75, 2.75, np.pi / 2]
 
     if args.memory_type == 'res':
         mpNet = End2EndMPNet(args.total_input_size, args.AE_input_size, args.mlp_input_size, \
@@ -124,9 +124,6 @@ def main(args):
     print('loading...')
 
     obs, inputs, targets = load_dataset(N=args.no_env * args.no_motion_paths)
-    # obs, path_data = load_dataset(N=args.no_env,
-    # NP=args.no_motion_paths,
-    # folder=args.data_path)
 
     # Train the Models
     print('training...')
@@ -135,38 +132,25 @@ def main(args):
         num_path_trained = 0
         print('epoch' + str(epoch))
         path_ct = 0
-        indices = np.arange(args.no_motion_path * args.no_env)
+        indices = np.arange(args.no_motion_paths * args.no_env)
         np.random.shuffle(indices)
         for i in range(args.no_env - 1):
             print('epoch: %d, training... path: %d' % (epoch, i + 1))
-            # TODO : generate random sample indices
-            # =============================================
-
-            dataset += p_dataset
-            targets += p_targets
-            env_indices += p_env_indices
-            path_ct += 1
-            if path_ct % args.train_path != 0:
-                continue
-            # record
-            # ============================================= change this parts
-            data_all += list(zip(dataset, targets, env_indices))
             p_index = indices[:(i + 1) * args.no_motion_paths]
             bi = np.concatenate((obs[p_index, :], inputs[p_index, :]),
                                 axis=1).astype(np.float32)
             bt = targets[p_index, :]
             bi = torch.FloatTensor(bi)
             bt = torch.FloatTensor(bt)
-            bi, bt = normalize(bi, args.world_size), normalize(
-                bt, args.world_size)
+            bi, bt = normalize(bi, world_size), normalize(bt, world_size)
             mpNet.zero_grad()
             bi = to_var(bi)
             bt = to_var(bt)
-            print('before training losses:')
-            print(mpNet.loss(mpNet(bi), bt))
+            print('before training losses:{}'.format(mpNet.loss(mpNet(bi),
+                                                                bt)))
             mpNet.observe(bi, 0, bt)
-            print('after training losses:')
-            print(mpNet.loss(mpNet(bi), bt))
+            print('after training losses:{}'.format(mpNet.loss(mpNet(bi), bt)))
+
             num_path_trained += 1
             # perform rehersal when certain number of batches have passed
             if args.freq_rehersal and num_path_trained % args.freq_rehersal == 0:
@@ -180,21 +164,18 @@ def main(args):
                 bt = targets[sample_index, :]
                 bi = torch.FloatTensor(bi)
                 bt = torch.FloatTensor(bt)
-                bi, bt = normalize(bi, args.world_size), normalize(
-                    bt, args.world_size)
+                bi, bt = normalize(bi, world_size), normalize(bt, world_size)
                 mpNet.zero_grad()
                 bi = to_var(bi)
                 bt = to_var(bt)
                 mpNet.observe(bi, 0, bt, False)  # train but don't remember
-            dataset, targets, env_indices = [], [], []
             path_ct = 0
 
         # Save the models
         if epoch > 0:
-            model_path = os.path.join('data', 'cmpnet',
-                                      'cmpnet_epoch_%d.pkl' % (epoch))
+            model_file = 'cmpnet_epoch_%d.pkl' % (epoch)
             save_state(mpNet, torch_seed, np_seed, py_seed,
-                       os.path.join(args.model_path, model_path))
+                       os.path.join(args.model_path, model_file))
             # test
 
 
