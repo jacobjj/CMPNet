@@ -24,11 +24,13 @@ CMD mkdir /root/code
 WORKDIR /root/code
 # Add codebase stub
 CMD mkdir /root/code/cmpnet
-ADD requirements.txt /root/code/cmpnet/requirement.txt
 ADD environment.yml /root/code/cmpnet/environment.yml
 RUN conda env create -f /root/code/cmpnet/environment.yml
 RUN echo "source activate cmpnet" >> /root/.bashrc
 ENV BASH_ENV /root/.bashrc
+
+# For some reason quadprog only installs outside
+RUN ["/bin/bash","-c","source activate cmpnet && pip install quadprog"]
 
 CMD ["bash"]
 
