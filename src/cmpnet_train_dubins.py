@@ -136,7 +136,8 @@ def main(args):
         np.random.shuffle(indices)
         for i in range(args.no_env - 1):
             print('epoch: %d, training... path: %d' % (epoch, i + 1))
-            p_index = indices[:(i + 1) * args.no_motion_paths]
+            p_index = indices[i * args.no_motion_paths:(i + 1) *
+                              args.no_motion_paths]
             bi = np.concatenate((obs[p_index, :], inputs[p_index, :]),
                                 axis=1).astype(np.float32)
             bt = targets[p_index, :]
