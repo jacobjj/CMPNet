@@ -23,7 +23,7 @@ def get_files(folder_loc):
     return files
 
 
-def load_dataset(N=10000):
+def load_dataset(N=10000, folder_loc=None):
     """
     A function to load dataset for the BC environments
     :param N: Number of points that needs to be loaded in the dataset.
@@ -35,8 +35,12 @@ def load_dataset(N=10000):
     i = 0
     done = False
     #Load possible seeds:
-    pc_folder = osp.join('data', 'point_cloud')
-    prune_folder = osp.join('data', 'RRT_star_planning_prune')
+    if not folder_loc:
+        pc_folder = osp.join('data', 'point_cloud')
+        prune_folder = osp.join('data', 'RRT_star_planning_prune')
+    else:
+        pc_folder = osp.join('data', 'point_cloud2')
+        prune_folder = osp.join('data', 'RRT_star_planning_prune2')
     seeds = []
     for _, _, f in os.walk(prune_folder):
         for f_i in f:
