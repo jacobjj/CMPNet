@@ -30,6 +30,7 @@ import os
 import random
 from utility import *
 import utility_s2d, utility_c2d, utility_r3d, utility_r2d
+import csv
 
 
 def main(args):
@@ -109,11 +110,13 @@ def main(args):
     # load train and test data
     print('loading...')
     obs, inputs, targets = load_dataset(N=args.no_env * args.no_motion_paths)
+    obs_test, inputs_test, targets_test = load_dataset(N=4000, folder_loc='2')
     get_numpy = lambda x: x.data.cpu().numpy()
 
     # Train the Models
     print('training...')
     train_loss = []
+    test_loss = []
     for epoch in range(args.start_epoch + 1, args.num_epochs + 1):
         data_all = []
         num_path_trained = 0
@@ -136,18 +139,40 @@ def main(args):
             bi = to_var(bi)
             bt = to_var(bt)
             mpNet.observe(bi, 0, bt, False)
-            loss = get_numpy(mpNet.loss(mpNet(bi), bt))
-            batch_loss += loss
             num_path_trained += 1
-        print('Epoch {} - loss: {}'.format(epoch, batch_loss / batch_size))
+
+        train_input = torch.FloatTensor(
+            np.concatenate((obs, inputs), axis=1).astype(np.float32))
+        train_y = torch.FloatTensor(targets)
+        train_input, train_y = normalize(train_input, world_size), normalize(
+            train_y, world_size)
+        train_input, train_y = to_var(train_input), to_var(train_y)
+        loss = get_numpy(mpNet.loss(mpNet(train_input), train_y))
+        print('Epoch {} - train loss: {}'.format(epoch, loss))
         train_loss.append(loss)
+        test_input = torch.FloatTensor(
+            np.concatenate((obs_test, inputs_test), axis=1).astype(np.float32))
+        test_y = torch.FloatTensor(targets_test)
+        test_input, test_y = normalize(test_input, world_size), normalize(
+            test_y, world_size)
+        test_input, test_y = to_var(test_input), to_var(test_y)
+        loss = get_numpy(mpNet.loss(mpNet(test_input), test_y))
+        print('Epoch {} - test loss: {}'.format(epoch, loss))
+        test_loss.append(loss)
         # Save the models
         if epoch > 0:
             model_file = 'mpnet_epoch_%d.pkl' % (epoch)
             save_state(mpNet, torch_seed, np_seed, py_seed,
                        os.path.join(args.model_path, model_file))
             # test
-        np.save(os.path.join(args.model_path, 'progress.csv'), train_loss)
+
+        results = {'test_loss': test_loss, 'train_loss': train_loss}
+        with open(os.path.join(args.model_path, 'progress.csv'), 'w') as f:
+            fieldnames = results.keys()
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            for i, j in zip(test_loss, train_loss):
+                writer.writerow({'test_loss': i, 'train_loss': j})
 
 
 parser = argparse.ArgumentParser()
