@@ -1,7 +1,7 @@
 # End-2-End learning (randomly shuffle path)
 python3 cmpnet/src/mpnet_train_dubins.py \
         --model_path data/mpnet/dubins_car \
-        --no_env 20000  \
+        --no_env 30000  \
         --no_motion_paths 1 \
         --grad_step 1 \
         --learning_rate 0.01 \
