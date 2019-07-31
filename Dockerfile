@@ -32,6 +32,22 @@ ENV BASH_ENV /root/.bashrc
 # For some reason quadprog only installs outside
 RUN ["/bin/bash","-c","source activate cmpnet && pip install quadprog"]
 
+# Installing bc_gym_planning_env
+
+# Installing dependencies
+RUN apt-get update && apt-get install -y \
+  libsm6 \
+  libxext6\
+  libxrender1 \
+  libfontconfig1
+
+RUN ["/bin/bash","-c","source activate cmpnet && pip install gtimer dubins"]
+
+# Copy code base
+COPY bc-gym-planning-env /root/code/bc-gym-planning-env/
+
+RUN ["/bin/bash","-c","source activate cmpnet && pip install -e /root/code/bc-gym-planning-env/."]
+
 CMD ["bash"]
 
 
