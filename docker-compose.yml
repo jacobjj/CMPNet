@@ -11,5 +11,6 @@ services:
     volumes:
       - "${HOME}/CMPNet/src:/root/code/cmpnet/src"
       - "/tmp/data:/root/code/data"
-      - "${HOME}/CMPNet/cmpnet_train_dubins.sh:/root/code/cmpnet/cmpnet_train_dubins.sh"
+      - "${HOME}/CMPNet/src/exp/mpnet_train_dubins.sh:/root/code/cmpnet/mpnet_train_dubins.sh"
+      - "${HOME}/CMPNet/src/exp/mpnet_test_dubins.sh:/root/code/cmpnet/mpnet_test_dubins.sh"
     command: bash
