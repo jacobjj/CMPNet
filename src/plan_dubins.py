@@ -44,7 +44,7 @@ def steerTo(start, end, obc, IsInCollision, step_sz=0.01):
     # NOTE: This will only work for Tricycle model.
     d = 0.964
     path = dubins.shortest_path(start, end, d)
-    traj, _ = path.sample_many(0.01)
+    traj, _ = path.sample_many(step_sz)
     traj = np.array(traj)
 
     for p in traj:
