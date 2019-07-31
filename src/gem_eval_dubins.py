@@ -11,6 +11,8 @@ from plan_general import neural_replan
 from plan_dubins import steerTo, DEFAULT_STEP, feasibility_check, lvc, generate_point_cloud
 from bc_gym_planning_env.envs.mini_env import RandomMiniEnv
 
+get_numpy = lambda x: x.data.cpu().numpy()
+
 
 def eval_tasks(mpNet,
                test_data,
@@ -21,7 +23,7 @@ def eval_tasks(mpNet,
                time_flag=False):
     seeds = test_data
     fes_env = []  # list of list
-    valid_env = []
+    valid_env = np.ones((1, len(test_data)))
     time_env = []
     time_total = []
     # Going through each environment
@@ -36,8 +38,8 @@ def eval_tasks(mpNet,
                             seed=s,
                             goal_spat_dist=0.05)
         start = env._env._state.pose
-        goal = env._env._state.orginal_path[-1]
-        obc = dict(costmap=env._env._state.costmap, robot=env._env.robot)
+        goal = env._env._state.original_path[-1]
+        obc = dict(costmap=env._env._state.costmap, robot=env._env._robot)
         # Generate point cloud data and convert it to 1D array
         obs = generate_point_cloud(env._env.serialize()['costmap']).ravel()
         obs = torch.from_numpy(obs)
@@ -101,6 +103,8 @@ def eval_tasks(mpNet,
             time1 = time.time() - time0
             time1 -= time_norm
             time_path.append(time1)
+            numpy_path = np.array([get_numpy(p) for p in path])
+            np.save('data/mpnet/test_env/traj_{}.npy'.format(s), numpy_path)
             print('test time: %f' % (time1))
         fes_path.append(fp)
         time_env.append(time_path)
