@@ -89,7 +89,7 @@ def neural_replan(mpNet,
         # if it is the initial plan, then we just do neural_replan
         MAX_LENGTH = 80
         mini_path, time_d = neural_replanner(mpNet, path[0], path[-1], obc, obs, IsInCollision, \
-                                            normalize, unnormalize, MAX_LENGTH, step_sz=step_sz)
+                                             normalize, unnormalize, MAX_LENGTH, step_sz=step_sz,steerTo=steerTo)
         if mini_path:
             if time_flag:
                 return removeCollision(mini_path, obc, IsInCollision), time_d
@@ -120,7 +120,7 @@ def neural_replan(mpNet,
         else:
             # plan mini path
             mini_path, time_d = neural_replanner(mpNet, start, goal, obc, obs, IsInCollision, \
-                                                normalize, unnormalize, MAX_LENGTH, step_sz=step_sz)
+            normalize, unnormalize, MAX_LENGTH, step_sz=step_sz,steerTo=steerTo)
             time_norm += time_d
             if mini_path:
                 new_path += removeCollision(
