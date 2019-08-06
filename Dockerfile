@@ -39,15 +39,24 @@ RUN apt-get update && apt-get install -y \
   libsm6 \
   libxext6\
   libxrender1 \
-  libfontconfig1
+  libfontconfig1 \
+  git
 
-RUN ["/bin/bash","-c","source activate cmpnet && pip install gtimer dubins"]
+RUN ["/bin/bash","-c","source activate cmpnet && pip install gtimer"]
 
 # Copy code base
 COPY bc-gym-planning-env /root/code/bc-gym-planning-env/
 
 RUN ["/bin/bash","-c","source activate cmpnet && pip install -e /root/code/bc-gym-planning-env/."]
 
+# Add pydubins
+RUN ["git","clone","https://github.com/jacobjj/pydubins.git"]
+WORKDIR /root/code/pydubins
+
+RUN ["/bin/bash","-c","source activate cmpnet && python  setup.py build_ext"]
+RUN ["/bin/bash","-c","source activate cmpnet && python  setup.py install"]
+
+WORKDIR /root/code
 CMD ["bash"]
 
 
