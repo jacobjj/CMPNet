@@ -203,12 +203,8 @@ if __name__ == '__main__':
                         help='path for saving trained models')
     parser.add_argument('--seen_N', type=int, default=0)
     parser.add_argument('--seen_NP', type=int, default=0)
-    parser.add_argument('--seen_s', type=int, default=0)
-    parser.add_argument('--seen_sp', type=int, default=0)
     parser.add_argument('--unseen_N', type=int, default=0)
     parser.add_argument('--unseen_NP', type=int, default=0)
-    parser.add_argument('--unseen_s', type=int, default=0)
-    parser.add_argument('--unseen_sp', type=int, default=0)
     parser.add_argument('--grad_step',
                         type=int,
                         default=1,
