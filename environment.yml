@@ -66,6 +66,7 @@ dependencies:
   - zlib=1.2.11=ha838bed_2
   - faiss-gpu=1.4.0=py36_cuda8.0.61_1
   - pip:
+      - jupyter
       - torchvision==0.3.0
       - torch==1.1.0
       - cython==0.29.12
