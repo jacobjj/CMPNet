@@ -56,8 +56,6 @@ WORKDIR /root/code/pydubins
 RUN ["/bin/bash","-c","source activate cmpnet && python  setup.py build_ext"]
 RUN ["/bin/bash","-c","source activate cmpnet && python  setup.py install"]
 
+ENV PYTHONPATH=/root/code/BC:/root/code/cmpnet/src:$PYTHONPATH
 WORKDIR /root/code
 CMD ["bash"]
-
-
-
