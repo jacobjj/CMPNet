@@ -3,15 +3,30 @@ import torch
 from Model.gem_utility import *
 import numpy as np
 import copy
+
+
 # Auxiliary functions useful for GEM's inner optimization.
 class End2EndMPNet(nn.Module):
-    def __init__(self, total_input_size, AE_input_size, mlp_input_size, output_size, AEtype, \
-                 n_tasks, n_memories, memory_strength, grad_step, CAE, MLP):
+    def __init__(
+            self,
+            total_input_size,
+            AE_input_size,
+            mlp_input_size,
+            output_size,
+            AEtype,
+            n_tasks,
+            n_memories,
+            memory_strength,
+            grad_step,
+            CAE,
+            MLP,
+    ):
         super(End2EndMPNet, self).__init__()
         self.encoder = CAE.Encoder()
         self.mlp = MLP(mlp_input_size, output_size)
         self.mse = nn.MSELoss()
-        self.opt = torch.optim.Adagrad(list(self.encoder.parameters())+list(self.mlp.parameters()))
+        self.opt = torch.optim.Adagrad(
+            list(self.encoder.parameters()) + list(self.mlp.parameters()))
         '''
         Below is the attributes defined in GEM implementation
         reference: https://arxiv.org/abs/1706.08840
@@ -20,9 +35,10 @@ class End2EndMPNet(nn.Module):
         self.margin = memory_strength
         self.n_memories = n_memories
         # allocate episodic memory
-        self.memory_data = torch.FloatTensor(
-            n_tasks, self.n_memories, total_input_size)
-        self.memory_labs = torch.FloatTensor(n_tasks, self.n_memories, output_size)
+        self.memory_data = torch.FloatTensor(n_tasks, self.n_memories,
+                                             total_input_size)
+        self.memory_labs = torch.FloatTensor(n_tasks, self.n_memories,
+                                             output_size)
         if torch.cuda.is_available():
             self.memory_data = self.memory_data.cuda()
             self.memory_labs = self.memory_labs.cuda()
@@ -32,7 +48,7 @@ class End2EndMPNet(nn.Module):
         for param in self.parameters():
             self.grad_dims.append(param.data.numel())
         # edit: need one more dimension for newly observed data
-        self.grads = torch.Tensor(sum(self.grad_dims), n_tasks+1)
+        self.grads = torch.Tensor(sum(self.grad_dims), n_tasks + 1)
         if torch.cuda.is_available():
             self.grads = self.grads.cuda()
         # allocate counters
@@ -43,6 +59,7 @@ class End2EndMPNet(nn.Module):
         self.grad_step = grad_step
         self.total_input_size = total_input_size
         self.AE_input_size = AE_input_size
+
     def clear_memory(self):
         # set the counter to 0
         self.mem_cnt[:] = 0
@@ -53,15 +70,23 @@ class End2EndMPNet(nn.Module):
     def set_opt(self, opt, lr=1e-2, momentum=None):
         # edit: can change optimizer type when setting
         if momentum is None:
-            self.opt = opt(list(self.encoder.parameters())+list(self.mlp.parameters()), lr=lr)
+            self.opt = opt(list(self.encoder.parameters()) +
+                           list(self.mlp.parameters()),
+                           lr=lr)
         else:
-            self.opt = opt(list(self.encoder.parameters())+list(self.mlp.parameters()), lr=lr, momentum=momentum)
+            self.opt = opt(list(self.encoder.parameters()) +
+                           list(self.mlp.parameters()),
+                           lr=lr,
+                           momentum=momentum)
+
     def forward(self, x):
         # xobs is the input to encoder
         # x is the input to mlp
-        z = self.encoder(x[:,:self.AE_input_size])
-        mlp_in = torch.cat((z,x[:,self.AE_input_size:]), 1)    # keep the first dim the same (# samples)
+        z = self.encoder(x[:, :self.AE_input_size])
+        mlp_in = torch.cat((z, x[:, self.AE_input_size:]),
+                           1)  # keep the first dim the same (# samples)
         return self.mlp(mlp_in)
+
     def loss(self, pred, truth):
         return self.mse(pred, truth)
 
@@ -88,7 +113,8 @@ class End2EndMPNet(nn.Module):
         for i in range(len(x)):
             self.num_seen[t] += 1
             prob_thre = min(self.n_memories, self.num_seen[t])
-            rand_num = np.random.choice(self.num_seen[t], 1) # 0---self.num_seen[t]-1
+            rand_num = np.random.choice(self.num_seen[t],
+                                        1)  # 0---self.num_seen[t]-1
             if rand_num < prob_thre:
                 # keep the new item
                 if self.mem_cnt[t] < self.n_memories:
@@ -107,6 +133,7 @@ class End2EndMPNet(nn.Module):
     reference: https://arxiv.org/abs/1706.08840
     code from: https://github.com/facebookresearch/GradientEpisodicMemory
     '''
+
     def observe(self, x, t, y, remember=True):
         # remember: remember this data or not
         # update memory
@@ -117,7 +144,8 @@ class End2EndMPNet(nn.Module):
 
             if len(self.observed_tasks) >= 1:
                 for tt in range(len(self.observed_tasks)):
-                    if self.mem_cnt[tt] == 0 and tt == len(self.observed_tasks) - 1:
+                    if self.mem_cnt[tt] == 0 and tt == len(
+                            self.observed_tasks) - 1:
                         # nothing to train on
                         continue
                     self.zero_grad()
@@ -125,13 +153,13 @@ class End2EndMPNet(nn.Module):
                     past_task = self.observed_tasks[tt]
                     if tt == len(self.observed_tasks) - 1:
                         ptloss = self.loss(
-                            self.forward(
-                            self.memory_data[past_task][:self.mem_cnt[past_task]]),   # TODO
-                            self.memory_labs[past_task][:self.mem_cnt[past_task]])   # up to current
+                            self.forward(self.memory_data[past_task]
+                                         [:self.mem_cnt[past_task]]),  # TODO
+                            self.memory_labs[past_task]
+                            [:self.mem_cnt[past_task]])  # up to current
                     else:
                         ptloss = self.loss(
-                            self.forward(
-                            self.memory_data[past_task]),   # TODO
+                            self.forward(self.memory_data[past_task]),  # TODO
                             self.memory_labs[past_task])
                     ptloss.backward()
                     store_grad(self.parameters, self.grads, self.grad_dims,
@@ -147,7 +175,7 @@ class End2EndMPNet(nn.Module):
             # just to give it a new task label
             if len(self.observed_tasks) >= 1:
                 # copy gradient
-                new_t = max(self.observed_tasks)+1  # a new dimension
+                new_t = max(self.observed_tasks) + 1  # a new dimension
                 store_grad(self.parameters, self.grads, self.grad_dims, new_t)
                 indx = torch.cuda.LongTensor(self.observed_tasks) if torch.cuda.is_available() \
                     else torch.LongTensor(self.observed_tasks)   # here we need all observed tasks
@@ -159,9 +187,11 @@ class End2EndMPNet(nn.Module):
                     # remember norm
                     norm = torch.norm(self.grads[:, new_t], 2)
                     project2cone2(self.grads[:, new_t].unsqueeze(1),
-                                  self.grads.index_select(1, indx), self.margin)
+                                  self.grads.index_select(1, indx),
+                                  self.margin)
                     new_norm = torch.norm(self.grads[:, new_t], 2)
-                    self.grads[:, new_t].copy_(self.grads[:, new_t] / new_norm * norm)
+                    self.grads[:, new_t].copy_(self.grads[:, new_t] /
+                                               new_norm * norm)
                     # before overwrite, to avoid gradient explosion, renormalize the gradient
                     # so that new gradient has the same l2 norm as previous
                     # it can be proved theoretically that this does not violate the non-negativity

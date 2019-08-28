@@ -131,7 +131,7 @@ def neural_replan(mpNet,
     if time_flag:
         return new_path, time_norm
     else:
-        return new_path
+        return new_path, {}
 
 
 def neural_replanner(mpNet,
