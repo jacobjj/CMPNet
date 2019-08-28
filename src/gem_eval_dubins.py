@@ -66,31 +66,20 @@ def eval_tasks(mpNet,
                 step_sz = step_sz / 2
             elif (t > 3):
                 step_sz = step_sz / 2
-            if time_flag:
-                # neural_replan is used to both generate the initial paths, and replan between points that are in collision
-                path, time_norm = neural_replan(mpNet,
-                                                path,
-                                                obc,
-                                                obs,
-                                                IsInCollision,
-                                                normalize_func,
-                                                unnormalize_func,
-                                                t == 0,
-                                                step_sz=step_sz,
-                                                time_flag=time_flag,
-                                                steerTo=steerTo)
-            else:
-                path = neural_replan(mpNet,
-                                     path,
-                                     obc,
-                                     obs,
-                                     IsInCollision,
-                                     normalize_func,
-                                     unnormalize_func,
-                                     t == 0,
-                                     step_sz=step_sz,
-                                     time_flag=time_flag,
-                                     steerTo=steerTo)
+
+            # neural_replan is used to both generate the initial paths, and replan between points that are in collision
+            path, time_norm = neural_replan(mpNet,
+                                            path,
+                                            obc,
+                                            obs,
+                                            IsInCollision,
+                                            normalize_func,
+                                            unnormalize_func,
+                                            t == 0,
+                                            step_sz=step_sz,
+                                            time_flag=time_flag,
+                                            steerTo=steerTo)
+
             # lazy vertex contraction
             path = lvc(path, obc, IsInCollision, step_sz=step_sz)
             # The safety check that tests if the path generated is feasible or not.
