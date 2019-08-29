@@ -11,13 +11,15 @@ class MPnetTrain(MPnetBase):
     Sets up the training of MPnet
     """
 
-    def __init__(self, n_epochs=1000, batchSize=256, **kwargs):
+    def __init__(self, load_dataset, n_epochs=1000, batchSize=256, **kwargs):
         """
         Initialize the MPnet trainer
         """
         super(MPnetTrain).__init__(**kwargs)
+
         self.n_epochs = n_epochs
         self.batchSize = batchSize
+        self.load_dataset = load_dataset
 
     def train(self, numEnvs, numPaths, trainDataPath, testDataPath):
         """
