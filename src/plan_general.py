@@ -100,7 +100,7 @@ def neural_replan(mpNet,
             if time_flag:
                 return path, time_d
             else:
-                return path
+                return path, 0.0
     MAX_LENGTH = 50
     # replan segments of paths
     new_path = [path[0]]
