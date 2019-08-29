@@ -21,8 +21,21 @@ class End2EndMPNet(nn.Module):
             CAE,
             MLP,
     ):
+    """
+    : param total_input_size :
+    : param AE_input_size :
+    : param mlp_input_size :
+    : param output_size :
+    : param AEtype :
+    : param n_tasks :
+    : param n_memories :
+    : param memory_strength :
+    : param grad_step :
+    : param CAE :
+    : param MLP :
+    """
         super(End2EndMPNet, self).__init__()
-        self.encoder = CAE.Encoder()
+        self.encoder = CAE.Encoder(mlp_input_size-2*output_size, AE_input_size)
         self.mlp = MLP(mlp_input_size, output_size)
         self.mse = nn.MSELoss()
         self.opt = torch.optim.Adagrad(
@@ -79,12 +92,12 @@ class End2EndMPNet(nn.Module):
                            lr=lr,
                            momentum=momentum)
 
-    def forward(self, x):
+    def forward(self, x,obs):
         # xobs is the input to encoder
         # x is the input to mlp
-        z = self.encoder(x[:, :self.AE_input_size])
-        mlp_in = torch.cat((z, x[:, self.AE_input_size:]),
-                           1)  # keep the first dim the same (# samples)
+        z = self.encoder(obs)
+        mlp_in = torch.cat((z, x,
+                           1))  # keep the first dim the same (# samples)
         return self.mlp(mlp_in)
 
     def loss(self, pred, truth):
