@@ -9,13 +9,13 @@ mse_loss = nn.MSELoss()
 
 
 class Encoder(nn.Module):
-    def __init__(self):
+    def __init__(self, output_size=28, input_size=2800):
         super(Encoder, self).__init__()
         print('using deep encoder')
-        self.encoder = nn.Sequential(nn.Linear(2800, 512), nn.PReLU(),
+        self.encoder = nn.Sequential(nn.Linear(input_size, 512), nn.PReLU(),
                                      nn.Linear(512, 256), nn.PReLU(),
                                      nn.Linear(256, 128), nn.PReLU(),
-                                     nn.Linear(128, 28))
+                                     nn.Linear(128, output_size))
 
     def net_loss(self, out_D, D):
         # given a net, obtain the loss
