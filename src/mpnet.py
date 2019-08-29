@@ -31,7 +31,6 @@ class MPnetBase():
                  learning_rate=0.1,
                  AE=None,
                  MLP=None,
-                 load_dataset=None,
                  modelPath=None):
         """
         Initialize the mpnet planner
@@ -101,15 +100,21 @@ class MPnetBase():
         save_state(self.mpNet, self.torch_seed, self.np_seed, self.py_seed,
                    fname)
 
+    def format_input(self, obs, inputs):
+        """
+        Formats the input data that needed to be fed into the network
+        """
+        bi = np.concatenate((obs, inputs), axis=1).astype(np.float32)
+        bi = torch.FloatTensor(bi)
+        bi = self.normalize(bi, self.worldSize)
+        return to_var(bi)
+
     def format_data(self, obs, inputs, targets):
         """
         Formats the data to be fed into the neural network
         """
-        bi = np.concatenate((obs, inputs), axis=1).astype(np.float32)
-        bi = torch.FloatTensor(bi)
+        bi = self.format_input(obs, inputs)
         bt = torch.FloatTensor(targets)
-        bi, bt = self.normalize(bi, self.worldSize), self.normalize(
-            bt, self.worldSize)
-        bi = to_var(bi)
+        bt = self.normalize(bt, self.worldSize)
         bt = to_var(bt)
         return bi, bt
