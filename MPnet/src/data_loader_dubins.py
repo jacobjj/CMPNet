@@ -23,44 +23,43 @@ def get_files(folder_loc):
     return files
 
 
-def load_dataset(N=10000, folder_loc=None):
+def load_dataset_voxel(N=10000, NP=1, folder_loc=None):
     """
-    A function to load dataset for the BC environments
-    :param N: Number of points that needs to be loaded in the dataset.
-    : return array(N,28000),array(N,3),array(N,3): point-cloud,inputs and target nodes
+    A function to load dataset for the BC environment in the same format as the other data loader functions
+    : param N : Number of environments to load
+    : param NP : Number of paths per environment
+    : return array(N*NP,28000),array(N*NP,3),array(N*NP,3): point-cloud,inputs and target nodes
     """
-    obs = np.zeros((N, 2800))
-    inputs = np.zeros((N, 6))
-    targets = np.zeros((N, 3))
+    numSamples = N * NP
+    obs = np.zeros((numSamples, 1, 61, 61))
+    inputs = np.zeros((numSamples, 6))
+    targets = np.zeros((numSamples, 3))
     i = 0
     done = False
-    #Load possible seeds:
-    if not folder_loc:
-        pc_folder = osp.join('data', 'point_cloud')
-        prune_folder = osp.join('data', 'RRT_star_planning_prune')
-    else:
-        pc_folder = osp.join('data', 'point_cloud2')
-        prune_folder = osp.join('data', 'RRT_star_planning_prune2')
+    # Load data
+    obsFolder = osp.join(folder_loc, 'obs_voxel')
+    trajFolder = osp.join(folder_loc, 'traj')
     seeds = []
-    for _, _, f in os.walk(prune_folder):
+    for _, _, f in os.walk(trajFolder):
         for f_i in f:
             if '.npy' in f_i:
                 s = int(re.findall(r'\d+', f_i)[0])
                 seeds.append(s)
 
     if not seeds:
-        print("Check folder location")
+        raise ValueError("Check folder location")
+
         # Load point cloud, points and target information
     for s in seeds:
-        obs_pc = np.load(osp.join(pc_folder, 'pc_{}.npy'.format(s)))
-        traj = np.load(osp.join(prune_folder, 'traj_{}.npy'.format(s)))
+        obs_pc = np.load(osp.join(obsFolder, 'voxel_{}.npy'.format(s)))
+        traj = np.load(osp.join(trajFolder, 'traj_{}.npy'.format(s)))
         for j, _ in enumerate(traj[:-1]):
-            obs[i, :] = obs_pc.ravel()
+            obs[i, ...] = np.expand_dims(obs_pc, axis=0)
             # Current node and goal location
             inputs[i, :] = np.concatenate((traj[j], traj[-1]))
             targets[i, :] = traj[j + 1]
             i += 1
-            if i == N:
+            if i == numSamples:
                 done = True
                 break
         if done:
