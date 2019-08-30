@@ -1,5 +1,6 @@
 import numpy as np
 from src.data_loader_2d import load_dataset
+from src.data_loader_dubins import load_dataset_voxel
 
 # import src.Model.AE.CAE as CAE_2d
 import Model.AE.voxel_AE as voxelNet
@@ -27,16 +28,16 @@ def train(args):
     }
 
     trainNetwork = MPnetTrain(
-        load_dataset=load_dataset,
-        n_epochs=1000,
+        load_dataset=load_dataset_voxel,
+        n_epochs=10,
         batchSize=256,
         **network_parameters,
     )
 
-    # trainNetwork.train(numEnvs=100,
-    #                    numPaths=1000,
-    #                    trainDataPath='',
-    #                    testDataPath='')
+    trainNetwork.train(numEnvs=5000,
+                       numPaths=1,
+                       trainDataPath='data/dubinsCar',
+                       testDataPath='data/dubinsCar')
 
 
 def parse_args():
