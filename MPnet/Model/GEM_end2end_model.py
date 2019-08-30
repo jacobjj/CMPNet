@@ -186,7 +186,7 @@ class End2EndMPNet(nn.Module):
 
             # now compute the grad on the current minibatch
             self.zero_grad()
-            loss = self.loss(self.forward(obs, x), y)
+            loss = self.loss(self.forward(x, obs), y)
             loss.backward()
 
             # check if gradient violates constraints
