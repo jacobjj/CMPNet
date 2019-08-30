@@ -90,7 +90,7 @@ class MPnetBase():
             modelPath = generateModelPath()
 
         if osp.exists(modelPath):
-            self.model_path = modelPath
+            self.modelPath = modelPath
         else:
             raise ValueError("Not a valid directory")
 
