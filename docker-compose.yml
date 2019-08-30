@@ -9,9 +9,7 @@ services:
     # environment:
       # - "NVIDIA_VISIBLE_DEVICES=2"
     volumes:
-      - "${HOME}/CMPNet/src:/root/code/cmpnet/src"
+      - "${HOME}/CMPNet/MPnet:/root/code/MPnet"
       - "/tmp/data:/root/code/data"
       - "${HOME}/RLplayground/BC:/root/code/BC"
-      - "${HOME}/CMPNet/src/exp/mpnet_train_dubins.sh:/root/code/cmpnet/mpnet_train_dubins.sh"
-      - "${HOME}/CMPNet/src/exp/mpnet_test_dubins.sh:/root/code/cmpnet/mpnet_test_dubins.sh"
     command: bash

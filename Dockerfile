@@ -23,7 +23,7 @@ ENV PATH /opt/conda/bin:$PATH
 CMD mkdir /root/code
 WORKDIR /root/code
 # Add codebase stub
-CMD mkdir /root/code/cmpnet
+CMD mkdir /root/code/mpnet
 ADD environment.yml /root/code/cmpnet/environment.yml
 RUN conda env create -f /root/code/cmpnet/environment.yml
 RUN echo "source activate cmpnet" >> /root/.bashrc
@@ -56,6 +56,6 @@ WORKDIR /root/code/pydubins
 RUN ["/bin/bash","-c","source activate cmpnet && python  setup.py build_ext"]
 RUN ["/bin/bash","-c","source activate cmpnet && python  setup.py install"]
 
-ENV PYTHONPATH=/root/code/BC:/root/code/cmpnet/src:$PYTHONPATH
+ENV PYTHONPATH=/root/code/BC:/root/code/MPnet:$PYTHONPATH
 WORKDIR /root/code
 CMD ["bash"]
