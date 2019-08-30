@@ -25,15 +25,14 @@ class MPnetTrain(MPnetBase):
         """
         A method to train the network with given data
         """
-        # NOTE: This is written for a certain format of dataset
-        obs, inputs, targets = self.load_dataset(N=numEnvs * numPaths,
+        obs, inputs, targets = self.load_dataset(N=numEnvs,
+                                                 NP=numPaths,
                                                  folder_loc=trainDataPath)
         trainObs, trainInput, trainTarget = self.format_data(
             obs, inputs, targets)
 
-        # NOTE: Change the number of test cases for the path
         obs_test, inputs_test, targets_test = self.load_dataset(
-            N=4000, folder_loc=testDataPath)
+            N=50, NP=1, folder_loc=testDataPath)
         testObs, testInput, testTarget = self.format_data(
             obs_test, inputs_test, targets_test)
 
@@ -42,13 +41,12 @@ class MPnetTrain(MPnetBase):
         train_loss = []
         test_loss = []
         for epoch in range(self.n_epochs):
-            data_all = []
             num_path_trained = 0
             print('Epoch : {}'.format(epoch))
             indices = np.arange(numEnvs * numPaths)
             np.random.shuffle(indices)
             batch_loss = 0
-            for i in range((numPaths * numEnvs) // self.batchSize):
+            for i in range((numEnvs * numPaths) // self.batchSize):
                 sample_index = indices[i * self.batchSize:(i + 1) *
                                        self.batchSize]
                 bobs, bi, bt = trainObs[sample_index, ...], trainInput[
@@ -57,12 +55,13 @@ class MPnetTrain(MPnetBase):
                 self.mpNet.zero_grad()
                 self.mpNet.observe(bobs, bi, 0, bt, False)
                 num_path_trained += 1
+
             loss = get_numpy(
-                self.mpNet.loss(self.mpNet(trainObs, trainInput), trainTarget))
+                self.mpNet.loss(self.mpNet(trainInput, trainObs), trainTarget))
             print('Epoch {} - train loss: {}'.format(epoch, loss))
             train_loss.append(loss)
             loss = get_numpy(
-                self.mpNet.loss(self.mpNet(testObs, testInput), testTarget))
+                self.mpNet.loss(self.mpNet(testInput, testObs), testTarget))
             print('Epoch {} - test loss: {}'.format(epoch, loss))
             test_loss.append(loss)
             # Save the models
