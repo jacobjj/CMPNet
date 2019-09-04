@@ -31,25 +31,25 @@ def load_dataset_voxel(N=10000, NP=1, folder_loc=None):
     : return array(N*NP,28000),array(N*NP,3),array(N*NP,3): point-cloud,inputs and target nodes
     """
     numSamples = N * NP
-    obs = np.zeros((numSamples, 1, 61, 61))
+
     inputs = np.zeros((numSamples, 6))
     targets = np.zeros((numSamples, 3))
+    obs = np.zeros((numSamples, 1, 61, 61))
     i = 0
     done = False
     # Load data
     obsFolder = osp.join(folder_loc, 'obs_voxel')
     trajFolder = osp.join(folder_loc, 'traj')
     seeds = []
-    for _, _, f in os.walk(trajFolder):
-        for f_i in f:
-            if '.npy' in f_i:
-                s = int(re.findall(r'\d+', f_i)[0])
-                seeds.append(s)
+
+    for entry in os.listdir(trajFolder):
+        if '.npy' in entry:
+            s = int(re.findall(r'\d+', entry)[0])
+            seeds.append(s)
 
     if not seeds:
-        raise ValueError("Check folder location")
-
-        # Load point cloud, points and target information
+        raise ValueError("{} - Not a valid folder".format(trajFolder))
+    # Load point cloud, points and target information
     for s in seeds:
         obs_pc = np.load(osp.join(obsFolder, 'voxel_{}.npy'.format(s)))
         traj = np.load(osp.join(trajFolder, 'traj_{}.npy'.format(s)))
