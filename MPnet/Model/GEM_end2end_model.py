@@ -39,8 +39,9 @@ class End2EndMPNet(nn.Module):
         self.encoder = CAE.Encoder(AE_output_size, AE_input_size)
         self.mlp = MLP(mlp_input_size, mlp_output_size)
         self.mse = nn.MSELoss()
-        self.opt = torch.optim.Adagrad(
-            list(self.encoder.parameters()) + list(self.mlp.parameters()))
+        self.opt = torch.optim.Adagrad(list(self.encoder.parameters()) +
+                                       list(self.mlp.parameters()),
+                                       lr=1)
         '''
         Below is the attributes defined in GEM implementation
         reference: https://arxiv.org/abs/1706.08840
@@ -104,7 +105,11 @@ class End2EndMPNet(nn.Module):
         return self.mlp(mlp_in)
 
     def loss(self, pred, truth):
-        return self.mse(pred, truth)
+        try:
+            contractive_loss = self.encoder.get_contractive_loss()
+        except AttributeError:
+            return self.mse(pred, truth)
+        return self.mse(pred, truth) + contractive_loss
 
     def load_memory(self, data):
         # data: (tasks, xs, ys)
@@ -143,6 +148,13 @@ class End2EndMPNet(nn.Module):
                     idx = idx[0]
                     self.memory_data[t, idx].copy_(x.data[i])
                     self.memory_labs[t, idx].copy_(y.data[i])
+
+    def fit(self, obs, x, y):
+        loss = self.loss(self.forward(x, obs), y)
+        loss.backward()
+        self.opt.step()
+        # It is safer to call nn.Module.zero_grad() rather than optim.zero_grad() since this is the safer option. If the encoder and decoder network has different optim functions, then this takes care for setting gradients of both model to zero.
+        self.zero_grad()
 
     '''
     Below is the added GEM feature
@@ -185,7 +197,6 @@ class End2EndMPNet(nn.Module):
                                past_task)
 
             # now compute the grad on the current minibatch
-            self.zero_grad()
             loss = self.loss(self.forward(x, obs), y)
             loss.backward()
 
@@ -219,6 +230,8 @@ class End2EndMPNet(nn.Module):
                     overwrite_grad(self.parameters, self.grads[:, new_t],
                                    self.grad_dims)
             self.opt.step()
+            # It is safer to call nn.Module.zero_grad() rather than optim.zero_grad() since this is the safer option. If the encoder and decoder network has different optim functions, then this takes care for setting gradients of both model to zero.
+            self.zero_grad()
         # after training, store into memory
 
         # when storing into memory, we use the correct task label
