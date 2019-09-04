@@ -1,6 +1,19 @@
 import torch
 import torch.nn as nn
 import torchvision.models as models
+from torch.autograd import Variable
+
+
+# custom weights initialization called on netG and netD
+def weights_init(m):
+    classname = m.__class__.__name__
+    if classname.find('Conv') != -1:
+        # nn.init.xavier_normal_(m.weight.data)
+        m.weight.data.normal_(0.0, 1e-3)
+    elif classname.find('Linear') != -1:
+        # nn.init.xavier_normal_(m.weight.data)
+        m.weight.data.normal_(0.0, 1e-3)
+        m.bias.data.fill_(0)
 
 
 class Encoder(nn.Module):
@@ -13,21 +26,26 @@ class Encoder(nn.Module):
         self.encoder = nn.Sequential(
             nn.Conv2d(in_channels=1,
                       out_channels=8,
-                      kernel_size=[3, 3],
+                      kernel_size=[5, 5],
                       stride=[1, 1]),
+            # nn.BatchNorm2d(8),
+            nn.MaxPool2d(kernel_size=3),
             nn.PReLU(),
             nn.Conv2d(in_channels=8,
                       out_channels=16,
-                      kernel_size=[5, 5],
+                      kernel_size=[3, 3],
                       stride=[1, 1]),
+            # nn.BatchNorm2d(16),
+            nn.MaxPool2d(kernel_size=3),
             nn.PReLU(),
             nn.Conv2d(in_channels=16,
                       out_channels=32,
-                      kernel_size=[5, 5],
+                      kernel_size=[3, 3],
                       stride=[1, 1]),
+            # nn.BatchNorm2d(32),
             nn.PReLU(),
         )
-
+        self.encoder.apply(weights_init)
         # For accepting different input shapes
         x = self.encoder(torch.autograd.Variable(torch.rand([1] + input_size)))
         first_fc_in_features = 1
@@ -38,6 +56,18 @@ class Encoder(nn.Module):
             nn.PReLU(),
             nn.Linear(128, output_size),
         )
+        self.head.apply(weights_init)
+
+    def get_contractive_loss(self):
+        """
+        Return contractive loss for the outer layer
+        """
+        keys = list(self.head.state_dict().keys())
+        W = Variable(self.head.state_dict()[keys[-2]])
+        if torch.cuda.is_available():
+            W = W.cuda()
+        contractive_loss = torch.sum(W**2, dim=1).sum()
+        return contractive_loss
 
     def forward(self, x):
         x = self.encoder(x)
