@@ -1,8 +1,9 @@
 from src.mpnet import MPnetBase
+import torch
 import numpy as np
 import os.path as osp
 import csv
-
+import sys
 get_numpy = lambda x: x.data.cpu().numpy()
 
 
@@ -40,32 +41,37 @@ class MPnetTrain(MPnetBase):
         print('Training...')
         train_loss = []
         test_loss = []
+        indices = np.arange(numEnvs * numPaths)
+
         for epoch in range(self.n_epochs):
-            num_path_trained = 0
-            print('Epoch : {}'.format(epoch))
-            indices = np.arange(numEnvs * numPaths)
-            np.random.shuffle(indices)
             batch_loss = 0
+            np.random.shuffle(indices)
             for i in range((numEnvs * numPaths) // self.batchSize):
                 sample_index = indices[i * self.batchSize:(i + 1) *
                                        self.batchSize]
                 bobs, bi, bt = trainObs[sample_index, ...], trainInput[
                     sample_index, :], trainTarget[sample_index, :]
                 # Run gradient descent
-                self.mpNet.zero_grad()
-                self.mpNet.observe(bobs, bi, 0, bt, False)
-                num_path_trained += 1
+                self.mpNet.fit(bobs, bi, bt)
 
-            loss = get_numpy(
-                self.mpNet.loss(self.mpNet(trainInput, trainObs), trainTarget))
-            print('Epoch {} - train loss: {}'.format(epoch, loss))
-            train_loss.append(loss)
-            loss = get_numpy(
-                self.mpNet.loss(self.mpNet(testInput, testObs), testTarget))
-            print('Epoch {} - test loss: {}'.format(epoch, loss))
-            test_loss.append(loss)
+            with torch.no_grad():
+                # TODO : need to break this up into smaller chunks
+                train_loss_i = get_numpy(
+                    self.mpNet.loss(
+                        self.mpNet(trainInput[:5000, ...],
+                                   trainObs[:5000, ...]),
+                        trainTarget[:5000, ...]))
+                # Test loss
+                test_loss_i = get_numpy(
+                    self.mpNet.loss(self.mpNet(testInput, testObs),
+                                    testTarget))
+
+            print('Epoch {} - train loss: {}'.format(epoch, train_loss_i))
+            print('Epoch {} - test loss: {}'.format(epoch, test_loss_i))
+            train_loss.append(train_loss_i)
+            test_loss.append(test_loss_i)
             # Save the models
-            if epoch > 0:
+            if epoch % 10 == 0:
                 model_file = 'mpnet_epoch_%d.pkl' % (epoch)
                 self.save_network_state(osp.join(self.modelPath, model_file))
 
