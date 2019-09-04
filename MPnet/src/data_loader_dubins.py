@@ -66,5 +66,6 @@ def load_dataset_voxel(N=10000, NP=1, folder_loc=None):
             break
     if not done:
         print("Not enough samples")
+        return obs[:i, ...], inputs[:i, ...], targets[:i, ...]
 
     return obs, inputs, targets
