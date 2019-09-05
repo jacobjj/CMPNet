@@ -29,12 +29,12 @@ def train(args):
 
     trainNetwork = MPnetTrain(
         load_dataset=load_dataset_voxel,
-        n_epochs=500,
-        batchSize=256,
+        n_epochs=1000,
+        batchSize=64,
         **network_parameters,
     )
 
-    trainNetwork.train(numEnvs=20000,
+    trainNetwork.train(numEnvs=40000,
                        numPaths=1,
                        trainDataPath='data/dubinsCar',
                        testDataPath='data/dubinsCar_test')
