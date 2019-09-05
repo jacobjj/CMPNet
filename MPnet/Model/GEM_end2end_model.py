@@ -41,7 +41,7 @@ class End2EndMPNet(nn.Module):
         self.mse = nn.MSELoss()
         self.opt = torch.optim.Adagrad(list(self.encoder.parameters()) +
                                        list(self.mlp.parameters()),
-                                       lr=1)
+                                       lr=3e-4)
         '''
         Below is the attributes defined in GEM implementation
         reference: https://arxiv.org/abs/1706.08840
@@ -105,10 +105,11 @@ class End2EndMPNet(nn.Module):
         return self.mlp(mlp_in)
 
     def loss(self, pred, truth):
-        try:
-            contractive_loss = self.encoder.get_contractive_loss()
-        except AttributeError:
-            return self.mse(pred, truth)
+        # try:
+        #     contractive_loss = self.encoder.get_contractive_loss()
+        # except AttributeError:
+        #     return self.mse(pred, truth)
+        contractive_loss = self.encoder.get_contractive_loss()
         return self.mse(pred, truth) + contractive_loss
 
     def load_memory(self, data):
