@@ -4,7 +4,22 @@ import numpy as np
 import os.path as osp
 import csv
 import sys
+from tqdm import tqdm
+from torch.nn.utils import clip_grad_value_
+
 get_numpy = lambda x: x.data.cpu().numpy()
+
+
+def step_decay_schedule(initial_lr=1e-3, decay_factor=0.75, step_size=10):
+    '''
+    borrowed from - https://www.jeremyjordan.me/nn-learning-rate/
+    Wrapper function to create a LearningRateScheduler with step decay schedule.
+    '''
+
+    def schedule(epoch):
+        return initial_lr * (decay_factor**np.floor(epoch / step_size))
+
+    return schedule
 
 
 class MPnetTrain(MPnetBase):
@@ -26,6 +41,7 @@ class MPnetTrain(MPnetBase):
         """
         A method to train the network with given data
         """
+        print('Loading data...')
         obs, inputs, targets = self.load_dataset(N=numEnvs,
                                                  NP=numPaths,
                                                  folder_loc=trainDataPath)
@@ -37,6 +53,12 @@ class MPnetTrain(MPnetBase):
         testObs, testInput, testTarget = self.format_data(
             obs_test, inputs_test, targets_test)
 
+        # Setting the learning rate scheduler
+        scheduler = step_decay_schedule(initial_lr=3e-4,
+                                        decay_factor=0.75,
+                                        step_size=100)
+        # Set the clipping of the gradients
+        clip_grad_value_(self.mpNet.parameters(), 1.0)
         # Train the Models
         print('Training...')
         train_loss = []
@@ -45,6 +67,9 @@ class MPnetTrain(MPnetBase):
 
         for epoch in range(self.n_epochs):
             batch_loss = 0
+            if epoch % 10 == 0:
+                newLR = scheduler(epoch)
+                self.mpNet.set_opt(torch.optim.Adagrad, newLR)
             np.random.shuffle(indices)
             for i in range((numEnvs * numPaths) // self.batchSize):
                 sample_index = indices[i * self.batchSize:(i + 1) *
@@ -58,9 +83,9 @@ class MPnetTrain(MPnetBase):
                 # TODO : need to break this up into smaller chunks
                 train_loss_i = get_numpy(
                     self.mpNet.loss(
-                        self.mpNet(trainInput[:5000, ...],
-                                   trainObs[:5000, ...]),
-                        trainTarget[:5000, ...]))
+                        self.mpNet(trainInput[sample_index[:5000], ...],
+                                   trainObs[sample_index[:5000], ...]),
+                        trainTarget[sample_index[:5000], ...]))
                 # Test loss
                 test_loss_i = get_numpy(
                     self.mpNet.loss(self.mpNet(testInput, testObs),
@@ -71,7 +96,7 @@ class MPnetTrain(MPnetBase):
             train_loss.append(train_loss_i)
             test_loss.append(test_loss_i)
             # Save the models
-            if epoch % 10 == 0:
+            if (epoch + 1) % 100 == 0:
                 model_file = 'mpnet_epoch_%d.pkl' % (epoch)
                 self.save_network_state(osp.join(self.modelPath, model_file))
 
