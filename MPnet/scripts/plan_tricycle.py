@@ -18,7 +18,7 @@ def steerTo_env(start, goal, IsInCollision):
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
-    s = 89
+    s = 13
     env = RandomMiniEnv(draw_new_turn_on_reset=False,
                         seed=s,
                         goal_spat_dist=0.05)
@@ -44,7 +44,7 @@ if __name__ == "__main__":
     }
 
     MPNetPlan_obj = MPNetPlan(
-        modelFile='data/MPnet_tricycle/mpnet_epoch_199.pkl',
+        modelFile='data/MPnet_tricycle/cyclic_lr/mpnet_epoch_9.pkl',
         steerTo=steerTo,
         **network_param,
     )
@@ -52,16 +52,17 @@ if __name__ == "__main__":
     goal_node = env._env._state.original_path[-1]
     obs = np.array(generateVoxelData(env), dtype=np.float32).reshape(
         (1, 1, 61, 61))
+    pointcloud = generate_point_cloud(s)
     path = MPNetPlan_obj.getPath(
         IsInCollision_env,
         start_node,
         goal_node,
         obs,
+        pointcloud,
     )
 
-    point_cloud = generate_point_cloud(s)
-    plt.scatter(point_cloud[:, 0], point_cloud[:, 1])
-    for p in path:
-        plt.scatter(p[0], p[1], marker='x', color='r')
-
-    plt.savefig('data/MPnet_env_{}.png'.format(s))
+    if path:
+        plt.scatter(pointcloud[:, 0], pointcloud[:, 1])
+        for p in path:
+            plt.scatter(p[0], p[1], marker='x', color='r')
+        plt.show()
