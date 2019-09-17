@@ -27,7 +27,7 @@ def IsInCollision(pose, obc):
     )
 
 
-def steerTo(start, end, obc, IsInCollision, step_sz=0.01):
+def steerTo(start, end, IsInCollision, step_sz=0.01):
     """
     A function to generate a dubins curve between start and end, and test if the points in the path are in  collision.
     :param start: the start position of the robot
@@ -42,13 +42,14 @@ def steerTo(start, end, obc, IsInCollision, step_sz=0.01):
     if abs(angle_diff) > np.pi / 2:
         return 0
     # NOTE: This will only work for Tricycle model.
-    d = 0.964
+    # d = 0.964
+    d = 0.6
     path = dubins.shortest_path(start, end, d)
     traj, _ = path.sample_many(step_sz)
     traj = np.array(traj)
 
     for p in traj:
-        if IsInCollision(p, obc):
+        if IsInCollision(p):
             return 0
     return 1
 
