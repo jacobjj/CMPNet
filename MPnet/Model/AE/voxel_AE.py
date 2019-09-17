@@ -31,14 +31,16 @@ class Encoder(nn.Module):
                       stride=[1, 1]),
             # nn.BatchNorm2d(8),
             nn.MaxPool2d(kernel_size=3),
-            nn.PReLU(),
+            # nn.PReLU(),
+            nn.ReLU(),
             nn.Conv2d(in_channels=8,
                       out_channels=4,
                       kernel_size=[3, 3],
                       stride=[1, 1]),
             # nn.BatchNorm2d(16),
             nn.MaxPool2d(kernel_size=3),
-            nn.PReLU(),
+            # nn.PReLU(),
+            nn.ReLU(),
             # nn.Conv2d(in_channels=16,
             #           out_channels=32,
             #           kernel_size=[3, 3],
@@ -46,7 +48,7 @@ class Encoder(nn.Module):
             # # nn.BatchNorm2d(32),
             # nn.PReLU(),
         )
-        self.encoder.apply(weights_init)
+        # self.encoder.apply(weights_init)
         # For accepting different input shapes
         x = self.encoder(torch.autograd.Variable(torch.rand([1] + input_size)))
         first_fc_in_features = 1
@@ -57,8 +59,7 @@ class Encoder(nn.Module):
             nn.PReLU(),
             nn.Linear(128, output_size),
         )
-        self.head.apply(weights_init)
-        self.set_clip_grad = True
+        # self.head.apply(weights_init)
 
     def get_contractive_loss(self):
         """
@@ -76,12 +77,3 @@ class Encoder(nn.Module):
         x = x.view(x.size(0), -1)
         x = self.head(x)
         return x
-
-
-def clip_grad(v, min, max):
-    """
-    A way to clip the gradients
-    From - https://github.com/DingKe/pytorch_workplace/blob/master/rnn/modules.py
-    """
-    v.register_hook(lambda g: g.clamp(min, max))
-    return v
