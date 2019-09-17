@@ -1,3 +1,4 @@
 **/__pycache__
 bc-gym-planning-env/**
 MPnet/data/**
+MPnet/scripts/check_learn_tricycle.py
