@@ -5,6 +5,13 @@ import numpy as np
 import copy
 
 
+def normalize_cost(z):
+    """
+    A function to wrap around -1 and 1
+    """
+    return (z + 1) % 2 - 1
+
+
 # Auxiliary functions useful for GEM's inner optimization.
 class End2EndMPNet(nn.Module):
     def __init__(
@@ -41,7 +48,7 @@ class End2EndMPNet(nn.Module):
         self.mse = nn.MSELoss()
         self.opt = torch.optim.Adagrad(list(self.encoder.parameters()) +
                                        list(self.mlp.parameters()),
-                                       lr=3e-4)
+                                       lr=1e-4)
         '''
         Below is the attributes defined in GEM implementation
         reference: https://arxiv.org/abs/1706.08840
@@ -75,6 +82,8 @@ class End2EndMPNet(nn.Module):
         self.num_seen = np.zeros(n_tasks).astype(int)
         self.grad_step = grad_step
         self.AE_input_size = AE_input_size
+        # Remove any gradient set during initialization
+        self.zero_grad()
 
     def clear_memory(self):
         # set the counter to 0
@@ -109,8 +118,11 @@ class End2EndMPNet(nn.Module):
         #     contractive_loss = self.encoder.get_contractive_loss()
         # except AttributeError:
         #     return self.mse(pred, truth)
+        # NOTE: This cost function only works for dubins car, need to change to be compatible with other methods
+        loss_cord = self.mse(pred[:, :2], truth[:, :2])
+        loss_angles = torch.mean(normalize_cost(pred[:, 2] - truth[:, 2])**2)
         contractive_loss = self.encoder.get_contractive_loss()
-        return self.mse(pred, truth) + contractive_loss
+        return loss_angles + loss_cord + contractive_loss
 
     def load_memory(self, data):
         # data: (tasks, xs, ys)
