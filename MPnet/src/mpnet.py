@@ -11,6 +11,7 @@ import torch
 import csv
 import datetime
 import torchvision
+import os.path as osp
 
 get_numpy = lambda x: x.data.cpu().numpy()
 
@@ -87,7 +88,7 @@ class MPnetBase():
             self.mpNet.encoder.cuda()
 
         self.mpNet.set_opt(torch.optim.Adagrad, lr=learning_rate)
-        # TODO: check if model path exists, otherwise create a new folder
+
         if modelPath == None:
             modelPath = generateModelPath()
 
