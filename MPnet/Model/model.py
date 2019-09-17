@@ -39,7 +39,6 @@ class MLP(nn.Module):
             # nn.PReLU(),
             # nn.Dropout(),
             # nn.Linear(384, 256),
-            # nn.Linear(input_size, 256),
             # nn.PReLU(),
             # nn.Dropout(),
             # nn.Linear(256, 256),
@@ -58,7 +57,7 @@ class MLP(nn.Module):
             nn.PReLU(),
             nn.Linear(32, output_size),
         )
-        self.fc.apply(weights_init)
+        # self.fc.apply(weights_init)
 
     def forward(self, x):
         out = self.fc(x)
