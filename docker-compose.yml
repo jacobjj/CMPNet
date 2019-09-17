@@ -6,9 +6,11 @@ services:
       dockerfile: Dockerfile
     runtime: nvidia
     image: cmpnet
-    # environment:
-      # - "NVIDIA_VISIBLE_DEVICES=2"
+    environment:
+      - "DISPLAY"
+      - "QT_X11_NO_MITSHM=1"
     volumes:
+      - "/tmp/.X11-unix:/tmp/.X11-unix:rw"
       - "${HOME}/CMPNet/MPnet:/root/code/MPnet"
       - "/tmp/data:/root/code/data"
       - "${HOME}/RLplayground/BC:/root/code/BC"
