@@ -93,6 +93,7 @@ class MPnetTrain(MPnetBase):
 
         # Train the Models
         print('Training...')
+        # TODO: Generate indices after knowing the samples generated
         indices = np.arange(numEnvsTrain * numPaths)
 
         for epoch in range(self.start_epoch, self.n_epochs):

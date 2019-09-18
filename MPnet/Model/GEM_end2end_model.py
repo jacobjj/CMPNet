@@ -46,9 +46,7 @@ class End2EndMPNet(nn.Module):
         self.encoder = CAE.Encoder(AE_output_size, AE_input_size)
         self.mlp = MLP(mlp_input_size, mlp_output_size)
         self.mse = nn.MSELoss()
-        self.opt = torch.optim.Adagrad(list(self.encoder.parameters()) +
-                                       list(self.mlp.parameters()),
-                                       lr=1e-4)
+        self.set_opt(torch.optim.Adagrad, lr=1e-4)
         '''
         Below is the attributes defined in GEM implementation
         reference: https://arxiv.org/abs/1706.08840
@@ -106,8 +104,9 @@ class End2EndMPNet(nn.Module):
 
     def forward(self, x, obs):
         """
+        Forward step of MPnet
         : param obs : input to encoder
-        # param x : input to mlp
+        : param x : input to mlp
         """
         z = self.encoder(obs)
         mlp_in = torch.cat((z, x), 1)
@@ -163,10 +162,16 @@ class End2EndMPNet(nn.Module):
                     self.memory_labs[t, idx].copy_(y.data[i])
 
     def fit(self, obs, x, y):
+        """
+        Updates the network weights to best fit the given data.
+        :param obs: the voxel representation of the obstacle space
+        :param x: the state of the robot
+        :param y: the next state of the robot
+        NOTE: It is safer to call nn.Module.zero_grad() rather than optim.zero_grad(). If the encoder and decoder network has different optim functions, then this takes care for setting gradients of both model to zero.
+        """
         loss = self.loss(self.forward(x, obs), y)
         loss.backward()
         self.opt.step()
-        # It is safer to call nn.Module.zero_grad() rather than optim.zero_grad() since this is the safer option. If the encoder and decoder network has different optim functions, then this takes care for setting gradients of both model to zero.
         self.zero_grad()
 
     '''

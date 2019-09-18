@@ -30,6 +30,7 @@ def load_dataset_voxel(N=10000, NP=1, folder_loc=None):
     : param NP : Number of paths per environment
     : return array(N*NP,28000),array(N*NP,3),array(N*NP,3): point-cloud,inputs and target nodes
     """
+    # TODO: Count number of possible samples that can be generated
     numSamples = N * NP
 
     inputs = np.zeros((numSamples, 6))
