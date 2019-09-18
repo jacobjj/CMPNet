@@ -37,7 +37,6 @@ class MPnetBase():
                  n_memories=256,
                  memory_strength=0.5,
                  grad_steps=1,
-                 learning_rate=0.1,
                  AE=None,
                  MLP=None,
                  modelPath=None):
@@ -53,7 +52,6 @@ class MPnetBase():
         : param n_memories
         : param memory_strength
         : param grad_steps : number of gradient descent steps taken for optimizing MPNet in each epoch
-        : param learning_rate
         : param n_epochs
         """
         self.torch_seed = np.random.randint(low=0, high=1000)
@@ -86,8 +84,6 @@ class MPnetBase():
             self.mpNet.cuda()
             self.mpNet.mlp.cuda()
             self.mpNet.encoder.cuda()
-
-        self.mpNet.set_opt(torch.optim.Adagrad, lr=learning_rate)
 
         if modelPath == None:
             modelPath = generateModelPath()

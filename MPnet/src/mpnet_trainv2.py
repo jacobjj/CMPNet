@@ -40,7 +40,12 @@ class MPnetTrain(MPnetBase):
     Sets up the training of MPnet
     """
 
-    def __init__(self, load_dataset, n_epochs=1000, batchSize=256, **kwargs):
+    def __init__(self,
+                 load_dataset,
+                 n_epochs=1000,
+                 batchSize=256,
+                 learning_rate=1e-2,
+                 **kwargs):
         """
         Initialize the MPnet trainer
         """
@@ -51,6 +56,7 @@ class MPnetTrain(MPnetBase):
         self.n_epochs = n_epochs
         self.batchSize = batchSize
         self.load_dataset = load_dataset
+        self.mpNet.set_opt(torch.optim.Adagrad, lr=learning_rate)
 
     def set_model_train_epoch(self, epoch):
         fileLoc = osp.join(self.modelPath, 'mpnet_epoch_{}.pkl'.format(epoch))
