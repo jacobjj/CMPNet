@@ -45,6 +45,7 @@ class MPnetTrain(MPnetBase):
                  n_epochs=1000,
                  batchSize=256,
                  learning_rate=1e-2,
+                 opt=None,
                  **kwargs):
         """
         Initialize the MPnet trainer
@@ -56,7 +57,10 @@ class MPnetTrain(MPnetBase):
         self.n_epochs = n_epochs
         self.batchSize = batchSize
         self.load_dataset = load_dataset
-        self.mpNet.set_opt(torch.optim.Adagrad, lr=learning_rate)
+        if opt is None:
+            opt = torch.optim.Adagrad
+        self.mpNet.set_opt(opt, lr=learning_rate)
+        # self.mpNet.set_opt(torch.optim.SGD, lr=learning_rate)
 
     def set_model_train_epoch(self, epoch):
         fileLoc = osp.join(self.modelPath, 'mpnet_epoch_{}.pkl'.format(epoch))
@@ -91,6 +95,8 @@ class MPnetTrain(MPnetBase):
                                     minimum_lr=3e-5,
                                     step_size=100)
 
+        # lr_range = np.linspace(-6, 0.1, self.n_epochs / 2)
+
         # Train the Models
         print('Training...')
         # TODO: Generate indices after knowing the samples generated
@@ -101,7 +107,8 @@ class MPnetTrain(MPnetBase):
             # if epoch % 10 == 0:
             #     newLR = scheduler(epoch)
             # newLR = scheduler(epoch)
-            # self.mpNet.set_opt(torch.optim.Adagrad, newLR)
+            # if epoch % 2 == 0:
+            #     self.mpNet.set_opt(torch.optim.SGD, 10**lr_range[epoch // 2])
             np.random.shuffle(indices)
             for i in range((numEnvsTrain * numPaths) // self.batchSize):
                 sample_index = indices[i * self.batchSize:(i + 1) *
