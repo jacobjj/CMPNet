@@ -111,12 +111,12 @@ class MPnetBase():
         """
         Formats the input data that needed to be fed into the network
         """
-        normObsVoxel = torchvision.transforms.Normalize([0.5], [1])
         bi = torch.FloatTensor(inputs)
         bobs = torch.FloatTensor(obs)
         # Normalize observations
-        for i in range(bobs.shape[0]):
-            bobs[i, ...] = normObsVoxel(bobs[i, ...])
+        # normObsVoxel = torchvision.transforms.Normalize([0.5], [1])
+        # for i in range(bobs.shape[0]):
+        #     bobs[i, ...] = normObsVoxel(bobs[i, ...])
         bi = self.normalize(bi, self.worldSize)
         return to_var(bobs), to_var(bi)
 
