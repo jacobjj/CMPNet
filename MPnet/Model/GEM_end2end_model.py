@@ -120,8 +120,15 @@ class End2EndMPNet(nn.Module):
         # NOTE: This cost function only works for dubins car, need to change to be compatible with other methods
         loss_cord = self.mse(pred[:, :2], truth[:, :2])
         loss_angles = torch.mean(normalize_cost(pred[:, 2] - truth[:, 2])**2)
+        return loss_angles + loss_cord
+
+    def loss_with_regularize(self, pred, truth):
+        """
+        Loss with regularization included.
+        """
+        loss = self.loss(pred, truth)
         contractive_loss = self.encoder.get_contractive_loss()
-        return loss_angles + loss_cord + contractive_loss
+        return loss + contractive_loss * 0.01
 
     def load_memory(self, data):
         # data: (tasks, xs, ys)
@@ -169,7 +176,7 @@ class End2EndMPNet(nn.Module):
         :param y: the next state of the robot
         NOTE: It is safer to call nn.Module.zero_grad() rather than optim.zero_grad(). If the encoder and decoder network has different optim functions, then this takes care for setting gradients of both model to zero.
         """
-        loss = self.loss(self.forward(x, obs), y)
+        loss = self.loss_with_regularize(self.forward(x, obs), y)
         loss.backward()
         self.opt.step()
         self.zero_grad()
