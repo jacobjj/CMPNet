@@ -1,10 +1,12 @@
 import torch.nn as nn
 import torch
+from torch.distributions import MultivariateNormal
 from Model.gem_utility import *
 import numpy as np
 import copy
 import dubins
 
+get_numpy = lambda x: x.data.cpu().numpy()
 
 def normalize_cost(z):
     """
@@ -15,6 +17,8 @@ def normalize_cost(z):
 
 # Auxiliary functions useful for GEM's inner optimization.
 class End2EndMPNet(nn.Module):
+    """ A python class defining the components of MPnet"""
+
     def __init__(
             self,
             AE_input_size,
@@ -47,6 +51,7 @@ class End2EndMPNet(nn.Module):
         self.encoder = CAE.Encoder(AE_output_size, AE_input_size)
         self.mlp = MLP(mlp_input_size, mlp_output_size)
         self.mse = nn.MSELoss()
+        self.covar_matrix = torch.eye(mlp_output_size) * 0.1
         self.set_opt(torch.optim.Adagrad, lr=1e-4)
         '''
         Below is the attributes defined in GEM implementation
@@ -56,6 +61,7 @@ class End2EndMPNet(nn.Module):
         self.margin = memory_strength
         self.n_memories = n_memories
         # allocate episodic memory
+
         self.memory_data = torch.FloatTensor(n_tasks, self.n_memories,
                                              mlp_input_size)
         self.memory_obs = torch.FloatTensor(n_tasks, self.n_memories,
@@ -129,10 +135,10 @@ class End2EndMPNet(nn.Module):
         A function that estimates the dubins curve distance from x to y.
         """
         dubins_path_distance = []
-        for x_i, y_i in zip(z, y):
+        for x_i, y_i in zip(x, y):
             d = self.get_path_length(tuple(x_i), tuple(y_i))
-            dubins_path_distance.extend((d - d_t)**2)
-        return torch.tensor(dubins_path_diff)
+            dubins_path_distance.extend(d)
+        return torch.tensor(dubins_path_distance)
 
     def loss(self, pred, truth):
         # try:
@@ -200,6 +206,20 @@ class End2EndMPNet(nn.Module):
         NOTE: It is safer to call nn.Module.zero_grad() rather than optim.zero_grad(). If the encoder and decoder network has different optim functions, then this takes care for setting gradients of both model to zero.
         """
         loss = self.loss_with_regularize(self.forward(x, obs), y)
+        loss.backward()
+        self.opt.step()
+        self.zero_grad()
+
+    def fit_distribution(self, obs, x, y):
+        """
+        Updates the network weights to generate the best distribution, that maximizes the dubins distance from the sampled point to the dubins curve.
+        :param obs: the voxel representation of the obstacle space
+        :param x: the state of the robot
+        :param y: the next state of the robot
+        """
+        y_hat, log_prob_y_hat = self.sample(obs, x)
+        distance = self.dubins_path_loss(y_hat, y)
+        loss = log_prob_y_hat * distance
         loss.backward()
         self.opt.step()
         self.zero_grad()
@@ -292,3 +312,13 @@ class End2EndMPNet(nn.Module):
                 self.old_task = t
                 self.mem_cnt[t] = 0
             self.remember(x, t, y)
+
+    def sample(self, obs, x):
+        """
+        A function that returns the sampled point along with its log probability
+        """
+        mean = self.forward(x, obs)
+        m = MultivariateNormal(mean, self.covar_matrix)
+        next_state = m.sample()
+        log_prob = m.log_prob(next_state)
+        return next_state, log_prob
