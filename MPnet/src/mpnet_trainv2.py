@@ -116,17 +116,23 @@ class MPnetTrain(MPnetBase):
                 bobs, bi, bt = trainObs[sample_index, ...], trainInput[
                     sample_index, :], trainTarget[sample_index, :]
                 # Run gradient descent
-                self.mpNet.fit(bobs, bi, bt)
+                # self.mpNet.fit(bobs, bi, bt)
+                self.mpNet.fit_distribution(bobs,bi,bt)
 
             with torch.no_grad():
+                # train_loss_i = get_numpy(
+                #     self.mpNet.loss(
+                #         self.mpNet(trainInput[sample_index, ...],
+                #                    trainObs[sample_index, ...]),
+                #         trainTarget[sample_index, ...]))
                 train_loss_i = get_numpy(
-                    self.mpNet.loss(
+                    self.mpNet.dubins_path_loss(
                         self.mpNet(trainInput[sample_index, ...],
                                    trainObs[sample_index, ...]),
                         trainTarget[sample_index, ...]))
                 # Test loss
                 test_loss_i = get_numpy(
-                    self.mpNet.loss(self.mpNet(testInput, testObs),
+                    self.mpNet.dubins_path_loss(self.mpNet(testInput, testObs),
                                     testTarget))
 
             print('Epoch {} - train loss: {}'.format(epoch, train_loss_i))
