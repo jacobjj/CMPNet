@@ -10,6 +10,7 @@ from src.utility_r2d import normalize, unnormalize
 from src.mpnet_trainv2 import MPnetTrain
 
 import argparse
+import torch
 
 
 def train(args):
@@ -29,12 +30,16 @@ def train(args):
 
     trainNetwork = MPnetTrain(
         load_dataset=load_dataset_voxel,
-        n_epochs=1000,
+        n_epochs=10000,
         batchSize=64,
+        opt=torch.optim.SGD,
+        # learning_rate=1e-5,
         **network_parameters,
     )
+    # trainNetwork.set_model_train_epoch(9999)
 
-    trainNetwork.train(numEnvs=40000,
+    trainNetwork.train(numEnvsTrain=90000,
+                       numEnvsTest=20000,
                        numPaths=1,
                        trainDataPath='data/dubinsCar',
                        testDataPath='data/dubinsCar_test')

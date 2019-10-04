@@ -40,11 +40,11 @@ if __name__ == "__main__":
         'worldSize': [2.75, 2.75, np.pi],
         'AE': voxelNet,
         'MLP': model.MLP,
-        'modelPath': 'data/MPnet_tricycle/'
+        'modelPath': 'data/MPnet_tricycle/SGD_reg_layer_1'
     }
 
     MPNetPlan_obj = MPNetPlan(
-        modelFile='data/MPnet_tricycle/cyclic_lr/mpnet_epoch_9.pkl',
+        modelFile='data/MPnet_tricycle/SGD_reg_layer_1/mpnet_epoch_9999.pkl',
         steerTo=steerTo,
         **network_param,
     )
