@@ -124,23 +124,23 @@ class End2EndMPNet(nn.Module):
         path = dubins.shortest_path(startNode, endNode, d)
         return path.path_length()
 
-    def dubins_path_loss(self,x,y,t):
+    def dubins_path_loss(self, x, y):
         """
-        A function that estimates the mean error of the 3 main points
+        A function that estimates the dubins curve distance from x to y.
         """
-        dubins_path_diff = []
-        for x_i,y_i,t_i in zip(z,y,t):
-            d = self.get_path_length(tuple(x_i),tuple(y_i))
-            d_t = self.get_path_length(tuple(x_i),tuple(t_i))
-            dubins_path_diff.extend((d-d_t)**2)
-        return torch.mean(torch.tensor(dubins_path_diff))
+        dubins_path_distance = []
+        for x_i, y_i in zip(z, y):
+            d = self.get_path_length(tuple(x_i), tuple(y_i))
+            dubins_path_distance.extend((d - d_t)**2)
+        return torch.tensor(dubins_path_diff)
 
     def loss(self, pred, truth):
         # try:
         #     contractive_loss = self.encoder.get_contractive_loss()
         # except AttributeError:
         #     return self.mse(pred, truth)
-        # NOTE: This cost function only works for dubins car, need to change to be compatible with other methods
+        # NOTE: This cost function is designed for r2d cars and need to change to
+        # be compatible with other methods
         loss_cord = self.mse(pred[:, :2], truth[:, :2])
         loss_angles = torch.mean(normalize_cost(pred[:, 2] - truth[:, 2])**2)
         return loss_angles + loss_cord
