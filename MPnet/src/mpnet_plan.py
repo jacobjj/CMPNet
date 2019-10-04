@@ -5,6 +5,8 @@ import copy
 import dubins
 import matplotlib.pyplot as plt
 
+# def plot_arrow(x, y, yaw):
+
 
 class MPNetPlan(MPnetBase):
     def __init__(self, modelFile, steerTo, stepSz=0.01, **kwargs):
@@ -35,6 +37,12 @@ class MPNetPlan(MPnetBase):
         """
         for p in path:
             ax.scatter(p[0], p[1], marker='x', color=color)
+            ax.arrow(p[0],
+                     p[1],
+                     np.cos(p[2]),
+                     np.sin(p[2]),
+                     head_width=0.1,
+                     head_length=0.3)
 
     def getDubinsTraj(self, path):
         """
@@ -69,6 +77,7 @@ class MPNetPlan(MPnetBase):
         # ]
         path = [start, goal]
         fig, (axMain, axMini) = plt.subplots(1, 2)
+        figParam = {'axis': axMini, 'pointCloud': pointCloud}
         for ax in (axMain, axMini):
             ax.set_xlim([-5, 5])
             ax.set_ylim([-5, 5])
@@ -101,12 +110,9 @@ class MPNetPlan(MPnetBase):
                                               goalNode,
                                               obs,
                                               IsInCollision,
-                                              maxPoints=50)
-                import pdb
-                pdb.set_trace()
-                self.plotMainPath(axMini, [], pointCloud)
-                self.plotPoints(axMini, miniPath)
-                plt.pause(1)
+                                              maxPoints=50,
+                                              figParam=figParam)
+                # import pdb;pdb.set_trace()
 
                 print("Remove points in Collision")
                 # Remove points that are in collision
@@ -145,7 +151,13 @@ class MPNetPlan(MPnetBase):
         if len(v.shape) == 1:
             return np.expand_dims(v, 0)
 
-    def neuralPlan(self, start, goal, obs, IsInCollision, maxPoints):
+    def neuralPlan(self,
+                   start,
+                   goal,
+                   obs,
+                   IsInCollision,
+                   maxPoints,
+                   figParam=None):
         """
         Generate a path using MPnet
         """
@@ -175,7 +187,14 @@ class MPNetPlan(MPnetBase):
 
             target_reached = self.steerTo(start.squeeze(), goal.squeeze(),
                                           IsInCollision)
-
+            if figParam is not None:
+                ax = figParam['axis']
+                pointCloud = figParam['pointCloud']
+                sampledPoints = pA + pB
+                self.plotPoints(ax, sampledPoints)
+                ax.set_xlim([-5, 5])
+                ax.set_ylim([-5, 5])
+                plt.pause(1)
             if target_reached:
                 pA.extend(reversed(pB))
                 return pA, 0
