@@ -3,6 +3,7 @@ import torch
 from Model.gem_utility import *
 import numpy as np
 import copy
+import dubins
 
 
 def normalize_cost(z):
@@ -111,6 +112,28 @@ class End2EndMPNet(nn.Module):
         z = self.encoder(obs)
         mlp_in = torch.cat((z, x), 1)
         return self.mlp(mlp_in)
+
+    def get_path_length(self, startNode, endNode):
+        """
+        A function to generate dubins path object
+        :param startNode : A tuple indicating the start position
+        :param endNode : A tuple indicating goal position
+        : returns (scalar) : path length of the shortest dubins curve.
+        """
+        d = 0.6
+        path = dubins.shortest_path(startNode, endNode, d)
+        return path.path_length()
+
+    def dubins_path_loss(self,x,y,t):
+        """
+        A function that estimates the mean error of the 3 main points
+        """
+        dubins_path_diff = []
+        for x_i,y_i,t_i in zip(z,y,t):
+            d = self.get_path_length(tuple(x_i),tuple(y_i))
+            d_t = self.get_path_length(tuple(x_i),tuple(t_i))
+            dubins_path_diff.extend((d-d_t)**2)
+        return torch.mean(torch.tensor(dubins_path_diff))
 
     def loss(self, pred, truth):
         # try:
