@@ -5,8 +5,10 @@ from Model.gem_utility import *
 import numpy as np
 import copy
 import dubins
+from torch.nn.utils import clip_grad_norm_
 
 get_numpy = lambda x: x.data.cpu().numpy()
+
 
 def normalize_cost(z):
     """
@@ -127,8 +129,12 @@ class End2EndMPNet(nn.Module):
         : returns (scalar) : path length of the shortest dubins curve.
         """
         d = 0.6
-        path = dubins.shortest_path(startNode, endNode, d)
-        return path.path_length()
+        try:
+            path = dubins.shortest_path(startNode, endNode, d)
+            return path.path_length()
+        except RuntimeError:
+            import pdb; pdb.set_trace()
+
 
     def dubins_path_loss(self, x, y):
         """
@@ -136,8 +142,9 @@ class End2EndMPNet(nn.Module):
         """
         dubins_path_distance = []
         for x_i, y_i in zip(x, y):
-            d = self.get_path_length(tuple(x_i), tuple(y_i))
-            dubins_path_distance.extend(d)
+            d = self.get_path_length(tuple(get_numpy(x_i)),
+                                     tuple(get_numpy(y_i)))
+            dubins_path_distance.append(d)
         return torch.tensor(dubins_path_distance)
 
     def loss(self, pred, truth):
@@ -147,6 +154,7 @@ class End2EndMPNet(nn.Module):
         #     return self.mse(pred, truth)
         # NOTE: This cost function is designed for r2d cars and need to change to
         # be compatible with other methods
+
         loss_cord = self.mse(pred[:, :2], truth[:, :2])
         loss_angles = torch.mean(normalize_cost(pred[:, 2] - truth[:, 2])**2)
         return loss_angles + loss_cord
@@ -219,10 +227,13 @@ class End2EndMPNet(nn.Module):
         """
         y_hat, log_prob_y_hat = self.sample(obs, x)
         distance = self.dubins_path_loss(y_hat, y)
-        loss = log_prob_y_hat * distance
+        loss = torch.mean(log_prob_y_hat * distance)
         loss.backward()
+        # grad_norm = clip_grad_norm_(self.encoder.parameters(),1.5)
+        grad_norm = clip_grad_norm_(self.mlp.parameters(),1.5)
         self.opt.step()
         self.zero_grad()
+        return grad_norm
 
     '''
     Below is the added GEM feature
@@ -317,7 +328,7 @@ class End2EndMPNet(nn.Module):
         """
         A function that returns the sampled point along with its log probability
         """
-        mean = self.forward(x, obs)
+        mean = self.forward(x, obs).cpu()
         m = MultivariateNormal(mean, self.covar_matrix)
         next_state = m.sample()
         log_prob = m.log_prob(next_state)
