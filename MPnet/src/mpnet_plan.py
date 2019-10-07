@@ -172,7 +172,10 @@ class MPNetPlan(MPnetBase):
                 network_input = np.concatenate((start, goal))
                 network_input = self.formatInput(network_input)
                 tobs, tInput = self.format_input(obs, network_input)
-                start = self.mpNet(tInput, tobs).squeeze().data.cpu()
+                # start = self.mpNet(tInput, tobs).squeeze().data.cpu()
+                # NOTE: Changed to be compatible with policy
+                start, _ = self.mpNet.sample(tobs, tInput)
+                start = start.squeeze().data.cpu()
                 start = self.denormalize(start, self.worldSize).numpy()
                 pA.append(start)
                 tree = 1
@@ -180,7 +183,9 @@ class MPNetPlan(MPnetBase):
                 network_input = np.concatenate((goal, start))
                 network_input = self.formatInput(network_input)
                 tobs, tInput = self.format_input(obs, network_input)
-                goal = self.mpNet(tInput, tobs).squeeze(0).data.cpu()
+                # goal = self.mpNet(tInput, tobs).squeeze(0).data.cpu()
+                goal, _ = self.mpNet.sample(tobs, tInput)
+                goal = goal.squeeze().data.cpu()
                 goal = self.denormalize(goal, self.worldSize).numpy()
                 pB.append(goal)
                 tree = 0
