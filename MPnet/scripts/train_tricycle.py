@@ -30,7 +30,7 @@ def train(args):
 
     trainNetwork = MPnetTrain(
         load_dataset=load_dataset_voxel,
-        n_epochs=10000,
+        n_epochs=1000,
         batchSize=64,
         opt=torch.optim.SGD,
         # learning_rate=1e-5,
