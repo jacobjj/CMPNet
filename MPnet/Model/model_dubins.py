@@ -3,29 +3,22 @@ import torch.nn as nn
 import torch
 import numpy as np
 
+
 def normalize_angle(z):
     """
     A function to wrap around -1 and 1
     """
     return (z + 1) % (2) - 1
 
+
 class DubinsPathGenerator(nn.Module):
     def __init__(self, input_size):
         super(DubinsPathGenerator, self).__init__()
 
         self.fc = nn.Sequential(
-            nn.Linear(input_size, 256),
+            nn.Linear(input_size + 3, 256),
             nn.PReLU(),
-            nn.Dropout(),
-            nn.Linear(256, 128),
-            nn.PReLU(),
-            nn.Dropout(),
-            nn.Linear(128, 64),
-            nn.PReLU(),
-            nn.Dropout(),
-            nn.Linear(64, 32),
-            nn.PReLU(),
-            nn.Linear(32, 3),
+            nn.Linear(256, 3),
         )
 
         def LeftTurn(self, x, beta):
@@ -48,3 +41,12 @@ class DubinsPathGenerator(nn.Module):
                 x[:, 1] + gamma * torch.sin(x[:, 2]),
                 x[:, 2],
             ])
+
+    def forward(self, c):
+        hidden = torch.zeros(c.shape[0], 3)
+        s = []
+        for i in range(3):
+            concat = torch.cat((c, hidden), 1)
+            hidden = self.fc(concat)
+            s.append(hidden)
+        return s
