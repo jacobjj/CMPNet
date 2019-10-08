@@ -16,9 +16,9 @@ class DubinsPathGenerator(nn.Module):
         super(DubinsPathGenerator, self).__init__()
 
         self.fc = nn.Sequential(
-            nn.Linear(input_size + 3, 256),
+            nn.Linear(input_size + 3, 64),
             nn.PReLU(),
-            nn.Linear(256, 3),
+            nn.Linear(64, 3),
         )
 
         def LeftTurn(self, x, beta):
@@ -49,4 +49,4 @@ class DubinsPathGenerator(nn.Module):
             concat = torch.cat((c, hidden), 1)
             hidden = self.fc(concat)
             s.append(hidden)
-        return s
+        return torch.cat(s,dim=1)
