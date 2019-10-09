@@ -4,7 +4,7 @@ from bc_gym_planning_env.envs.base.env import pose_collides
 
 from src.utility_r2d import normalize, unnormalize
 import Model.AE.voxel_AE as voxelNet
-import Model.model as model
+import Model.model_dubins as model
 from src.mpnet_plan import MPNetPlan
 from src.plan_dubins import steerTo
 from BC.utils.misc import generateVoxelData
@@ -18,7 +18,7 @@ def steerTo_env(start, goal, IsInCollision):
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
-    s = 13
+    s = 89
     env = RandomMiniEnv(draw_new_turn_on_reset=False,
                         seed=s,
                         goal_spat_dist=0.05)
@@ -39,12 +39,12 @@ if __name__ == "__main__":
         'encoderOutputDim': 64,
         'worldSize': [2.75, 2.75, np.pi],
         'AE': voxelNet,
-        'MLP': model.MLP,
-        'modelPath': 'data/MPnet_tricycle/SGD_reg_layer_1'
+        'MLP': model.DubinsPathGenerator,
+        'modelPath': 'data/MPnet_tricycle/dubins_rnn/SGD_lrminus2/'
     }
 
     MPNetPlan_obj = MPNetPlan(
-        modelFile='data/MPnet_tricycle/SGD_reg_layer_1/mpnet_epoch_9999.pkl',
+        modelFile='data/MPnet_tricycle/dubins_rnn/SGD_lrminus2/mpnet_epoch_1739.pkl',
         steerTo=steerTo,
         **network_param,
     )
@@ -66,3 +66,4 @@ if __name__ == "__main__":
         for p in path:
             plt.scatter(p[0], p[1], marker='x', color='r')
         plt.show()
+
