@@ -20,6 +20,8 @@ class DubinsPathGenerator(nn.Module):
             nn.PReLU(),
             nn.Linear(64, 3),
         )
+        self.relu = nn.ReLU()
+        self.tanh = nn.Tanh()
 
     def LeftTurn(self, x, beta):
         return torch.Tensor([
@@ -48,5 +50,8 @@ class DubinsPathGenerator(nn.Module):
         for i in range(3):
             concat = torch.cat((c, hidden), 1)
             hidden = self.fc(concat)
+            hidden = torch.cat(
+                (self.tanh(hidden[:, :2]), self.relu(hidden[:, 2]).reshape((-1,1))),dim=1
+            )
             s.append(hidden)
         return torch.cat(s,dim=1)
