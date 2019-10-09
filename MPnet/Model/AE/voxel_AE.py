@@ -22,7 +22,7 @@ class Encoder(nn.Module):
     A 2D VoxNet for encoding obstacle space
     """
 
-    def __init__(self, output_size, input_size):
+    def __init__(self, output_size, state_size, input_size):
         super(Encoder, self).__init__()
         self.encoder = nn.Sequential(
             nn.Conv2d(in_channels=1,
@@ -55,9 +55,10 @@ class Encoder(nn.Module):
         for n in x.size()[1:]:
             first_fc_in_features *= n
         self.head = nn.Sequential(
-            nn.Linear(first_fc_in_features, 128),
+            nn.Linear(first_fc_in_features + state_size * 2, 128),
             nn.PReLU(),
             nn.Linear(128, output_size),
+            nn.Softmax(dim=1)
         )
         # self.head.apply(weights_init)
 
@@ -72,8 +73,9 @@ class Encoder(nn.Module):
         contractive_loss = torch.sum(W**2, dim=1).sum()
         return contractive_loss
 
-    def forward(self, x):
-        x = self.encoder(x)
-        x = x.view(x.size(0), -1)
+    def forward(self, obs, state):
+        obs = self.encoder(obs)
+        x = obs.view(obs.size(0), -1)
+        x = torch.cat((x, state), dim=1)
         x = self.head(x)
         return x

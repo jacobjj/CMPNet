@@ -103,6 +103,7 @@ class MPnetTrain(MPnetBase):
         indices = np.arange(numEnvsTrain * numPaths)
 
         for epoch in range(self.start_epoch, self.n_epochs):
+            self.mpNet.train()
             batch_loss = 0
             # if epoch % 10 == 0:
             #     newLR = scheduler(epoch)
@@ -117,33 +118,26 @@ class MPnetTrain(MPnetBase):
                 bobs, bi, bt = trainObs[sample_index, ...], trainInput[
                     sample_index, :], trainTarget[sample_index, :]
                 # Run gradient descent
-                # self.mpNet.fit(bobs, bi, bt)
-                grad_norm.append(self.mpNet.fit_distribution(bobs, bi, bt))
+                self.mpNet.fit(bobs, bi, bt)
+                # grad_norm.append(self.mpNet(bobs, bi, bt))
 
             with torch.no_grad():
-                # train_loss_i = get_numpy(
-                #     self.mpNet.loss(
-                #         self.mpNet(trainInput[sample_index, ...],
-                #                    trainObs[sample_index, ...]),
-                #         trainTarget[sample_index, ...]))
-                train_loss_i = np.mean(
-                    get_numpy(
-                        self.mpNet.dubins_path_loss(
-                            self.mpNet(trainInput[sample_index, ...],
-                                       trainObs[sample_index, ...]),
-                            trainTarget[sample_index, ...])))
+                self.mpNet.eval()
+                train_loss_i = get_numpy(
+                    self.mpNet.loss_with_regularize(
+                        self.mpNet.forward(trainInput[sample_index, ...],
+                                           trainObs[sample_index, ...]),
+                        trainTarget[sample_index, ...]))
+
                 # Test loss
-                # test_loss_i = get_numpy(
-                #     self.mpNet.dubins(self.mpNet(testInput, testObs),
-                #                     testTarget))
-                test_loss_i = np.mean(
-                    get_numpy(
-                        self.mpNet.dubins_path_loss(
-                            self.mpNet(testInput, testObs), testTarget)))
+                test_loss_i = get_numpy(
+                    self.mpNet.loss_with_regularize(
+                        self.mpNet(testInput, testObs), testTarget))
+
                 if train_loss_i > 10:
                     import pdb; pdb.set_trace()
 
-            print('Epoch {} - mean grad norm {}'.format(epoch, np.mean(grad_norm)))
+            # print('Epoch {} - mean grad norm {}'.format(epoch, np.mean(grad_norm)))
             print('Epoch {} - train loss: {}'.format(epoch, train_loss_i))
             print('Epoch {} - test loss: {}'.format(epoch, test_loss_i))
             self.train_loss.append(train_loss_i)

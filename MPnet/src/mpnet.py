@@ -1,4 +1,4 @@
-from Model.GEM_end2end_model import End2EndMPNet
+from Model.End2end_dubins_model import End2EndMPNet
 from src.utility import load_net_state, load_opt_state, save_state, to_var
 
 import src.data_loader_dubins
@@ -70,12 +70,9 @@ class MPnetBase():
         self.mpNet = End2EndMPNet(
             AE_input_size=encoderInputDim,
             AE_output_size=encoderOutputDim,
-            mlp_input_size=self.worldInputDim * 2 + encoderOutputDim,
-            mlp_output_size=self.worldInputDim,
-            AEtype='deep',
+            state_size=self.worldInputDim,
+            mlp_input_size= encoderOutputDim,
             n_tasks=n_tasks,
-            n_memories=n_memories,
-            memory_strength=memory_strength,
             grad_step=grad_steps,
             CAE=AE,
             MLP=MLP,
@@ -126,6 +123,5 @@ class MPnetBase():
         """
         bobs, bi = self.format_input(obs, inputs)
         bt = torch.FloatTensor(targets)
-        bt = self.normalize(bt, self.worldSize)
         bt = to_var(bt)
         return bobs, bi, bt

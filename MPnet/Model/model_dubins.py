@@ -21,29 +21,29 @@ class DubinsPathGenerator(nn.Module):
             nn.Linear(64, 3),
         )
 
-        def LeftTurn(self, x, beta):
-            return torch.Tensor([
-                x[:, 0] + torch.sin(x[:, 2] + beta) - torch.sin(x[:, 2]),
-                x[:, 1] - torch.cos(x[:, 2] + beta) + torch.cos(x[:, 2]),
-                normalize_angle(beta + x[:, 2]),
-            ])
+    def LeftTurn(self, x, beta):
+        return torch.Tensor([
+            x[:, 0] + torch.sin(x[:, 2] + beta) - torch.sin(x[:, 2]),
+            x[:, 1] - torch.cos(x[:, 2] + beta) + torch.cos(x[:, 2]),
+            normalize_angle(beta + x[:, 2]),
+        ])
 
-        def RightTurn(self, x, alpha):
-            return torch.Tensor([
-                x[:, 0] - torch.sin(x[:, 2] - alpha) + torch.sin(x[:, 2]),
-                x[:, 1] + torch.cos(x[:, 2] - alpha) - torch.cos(x[:, 2]),
-                normalize_angle(alpha - x[:, 2]),
-            ])
+    def RightTurn(self, x, alpha):
+        return torch.Tensor([
+            x[:, 0] - torch.sin(x[:, 2] - alpha) + torch.sin(x[:, 2]),
+            x[:, 1] + torch.cos(x[:, 2] - alpha) - torch.cos(x[:, 2]),
+            normalize_angle(alpha - x[:, 2]),
+        ])
 
-        def StraightTrun(self, x, gamma):
-            return torch.Tensor([
-                x[:, 0] + gamma * torch.cos(x[:, 2]),
-                x[:, 1] + gamma * torch.sin(x[:, 2]),
-                x[:, 2],
-            ])
+    def StraightTrun(self, x, gamma):
+        return torch.Tensor([
+            x[:, 0] + gamma * torch.cos(x[:, 2]),
+            x[:, 1] + gamma * torch.sin(x[:, 2]),
+            x[:, 2],
+        ])
 
     def forward(self, c):
-        hidden = torch.zeros(c.shape[0], 3)
+        hidden = torch.zeros(c.shape[0], 3).cuda()
         s = []
         for i in range(3):
             concat = torch.cat((c, hidden), 1)

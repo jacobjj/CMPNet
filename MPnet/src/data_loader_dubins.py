@@ -4,6 +4,7 @@ import numpy as np
 import re
 import os
 import os.path as osp
+import dubins
 
 # from bc_gym_planning_env.envs.mini_env import RandomMiniEnv
 # from bc_gym_planning_env.envs.base.env import pose_collides
@@ -23,6 +24,36 @@ def get_files(folder_loc):
     return files
 
 
+"""
+Define the word as follows:
+index 0 - RightTurn
+index 1 - LeftTurn
+index 2 - Straight
+Each row has the following representation
+LSL = 0
+LSR = 1
+RSL = 2
+RSR = 3
+RLR = 4
+LRL = 5
+"""
+
+
+def primitive2word(primitive_length, primitive_type):
+    s = np.zeros((3, 3))
+    primitive2word = np.array([
+        [1, 2, 1],
+        [1, 2, 0],
+        [0, 2, 1],
+        [0, 2, 0],
+        [0, 1, 0],
+        [1, 0, 1],
+    ])
+    for i, length in enumerate(primitive_length):
+        s[i, primitive2word[primitive_type][i]] = length
+    return s
+
+
 def load_dataset_voxel(N=10000, NP=1, folder_loc=None):
     """
     A function to load dataset for the BC environment in the same format as the other data loader functions
@@ -34,7 +65,7 @@ def load_dataset_voxel(N=10000, NP=1, folder_loc=None):
     numSamples = N * NP
 
     inputs = np.zeros((numSamples, 6))
-    targets = np.zeros((numSamples, 3))
+    targets = np.zeros((numSamples, 9))
     obs = np.zeros((numSamples, 1, 61, 61))
     i = 0
     done = False
@@ -58,7 +89,12 @@ def load_dataset_voxel(N=10000, NP=1, folder_loc=None):
             obs[i, ...] = np.expand_dims(obs_pc, axis=0)
             # Current node and goal location
             inputs[i, :] = np.concatenate((traj[j], traj[-1]))
-            targets[i, :] = traj[j + 1]
+            path = dubins.shortest_path(tuple(traj[j]), tuple(traj[j + 1]),
+                                        0.6)
+            primitive_length = [path.segment_length(i) for i in range(3)]
+            primitive_type = path.path_type()
+            s = primitive2word(primitive_length, primitive_type)
+            targets[i, :] = np.ravel(s)
             i += 1
             if i == numSamples:
                 done = True
