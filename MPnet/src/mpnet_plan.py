@@ -4,23 +4,7 @@ from src.mpnet import MPnetBase
 import copy
 import dubins
 import matplotlib.pyplot as plt
-
-def word2primitive(word):
-    """
-    Converts the word back to the primitive path
-    Define the word as follows:
-    index 0 - RightTurn
-    index 1 - LeftTurn
-    index 2 - Straight
-    Each row has the following representation
-    LSL = 0
-    LSR = 1
-    RSL = 2
-    RSR = 3
-    RLR = 4
-    LRL = 5
-    """
-    word = word.reshape((3,3))
+from tools.utils import word2primitive
 
 
 
@@ -193,6 +177,8 @@ class MPNetPlan(MPnetBase):
         """
         # start = self.formatInput(start)
         # goal = self.formatInput(goal)
+        start = torch.tensor(start,dtype=torch.float)
+        goal = torch.tensor(goal,dtype=torch.float)
         pA = [start]
         pB = [goal]
         noPath = [copy.copy(start), copy.copy(goal)]
@@ -202,19 +188,17 @@ class MPNetPlan(MPnetBase):
                 network_input = np.concatenate((start, goal))
                 network_input = self.formatInput(network_input)
                 tobs, tInput = self.format_input(obs, network_input)
-                start = self.mpNet(tInput, tobs).squeeze().data.cpu()
-                import pdb; pdb.set_trace()
-                start = start.squeeze().data.cpu()
-                start = self.denormalize(start, self.worldSize).numpy()
+                word = self.mpNet(tInput, tobs).squeeze().data.cpu()
+                start = word2primitive(word, start, 0.6)
                 pA.append(start)
                 tree = 1
             else:
                 network_input = np.concatenate((goal, start))
                 network_input = self.formatInput(network_input)
                 tobs, tInput = self.format_input(obs, network_input)
-                goal = self.mpNet(tInput, tobs).squeeze(0).data.cpu()
-                goal = goal.squeeze().data.cpu()
-                goal = self.denormalize(goal, self.worldSize).numpy()
+                word = self.mpNet(tInput, tobs).squeeze(0).data.cpu()
+                word = word.squeeze().data.cpu()
+                goal = word2primitive(word, goal, 0.6)
                 pB.append(goal)
                 tree = 0
 
