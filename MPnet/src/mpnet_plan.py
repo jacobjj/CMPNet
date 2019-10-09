@@ -5,8 +5,38 @@ import copy
 import dubins
 import matplotlib.pyplot as plt
 
-# def plot_arrow(x, y, yaw):
+def word2primitive(word):
+    """
+    Converts the word back to the primitive path
+    Define the word as follows:
+    index 0 - RightTurn
+    index 1 - LeftTurn
+    index 2 - Straight
+    Each row has the following representation
+    LSL = 0
+    LSR = 1
+    RSL = 2
+    RSR = 3
+    RLR = 4
+    LRL = 5
+    """
+    word = word.reshape((3,3))
 
+
+
+def primitive2word(primitive_length, primitive_type):
+    s = np.zeros((3, 3))
+    primitive2word = np.array([
+        [1, 2, 1],
+        [1, 2, 0],
+        [0, 2, 1],
+        [0, 2, 0],
+        [0, 1, 0],
+        [1, 0, 1],
+    ])
+    for i, length in enumerate(primitive_length):
+        s[i, primitive2word[primitive_type][i]] = length
+    return s
 
 class MPNetPlan(MPnetBase):
     def __init__(self, modelFile, steerTo, stepSz=0.01, **kwargs):
@@ -172,9 +202,8 @@ class MPNetPlan(MPnetBase):
                 network_input = np.concatenate((start, goal))
                 network_input = self.formatInput(network_input)
                 tobs, tInput = self.format_input(obs, network_input)
-                # start = self.mpNet(tInput, tobs).squeeze().data.cpu()
-                # NOTE: Changed to be compatible with policy
-                start, _ = self.mpNet.sample(tobs, tInput)
+                start = self.mpNet(tInput, tobs).squeeze().data.cpu()
+                import pdb; pdb.set_trace()
                 start = start.squeeze().data.cpu()
                 start = self.denormalize(start, self.worldSize).numpy()
                 pA.append(start)
@@ -183,8 +212,7 @@ class MPNetPlan(MPnetBase):
                 network_input = np.concatenate((goal, start))
                 network_input = self.formatInput(network_input)
                 tobs, tInput = self.format_input(obs, network_input)
-                # goal = self.mpNet(tInput, tobs).squeeze(0).data.cpu()
-                goal, _ = self.mpNet.sample(tobs, tInput)
+                goal = self.mpNet(tInput, tobs).squeeze(0).data.cpu()
                 goal = goal.squeeze().data.cpu()
                 goal = self.denormalize(goal, self.worldSize).numpy()
                 pB.append(goal)
