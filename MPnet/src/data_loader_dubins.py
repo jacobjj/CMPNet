@@ -39,9 +39,10 @@ LRL = 5
 """
 
 
-def primitive2word(primitive_length, primitive_type):
+def primitive2word(primitive_length, primitive_type, d):
     s = np.zeros((3, 3))
-    primitive2word = np.array([
+    scale = [d,d,1]
+    primitive2word_dict = np.array([
         [1, 2, 1],
         [1, 2, 0],
         [0, 2, 1],
@@ -50,7 +51,8 @@ def primitive2word(primitive_length, primitive_type):
         [1, 0, 1],
     ])
     for i, length in enumerate(primitive_length):
-        s[i, primitive2word[primitive_type][i]] = length
+        row = primitive_type
+        s[i, primitive2word_dict[row][i]] = length/scale[primitive2word_dict[row][i]]
     return s
 
 
@@ -93,7 +95,7 @@ def load_dataset_voxel(N=10000, NP=1, folder_loc=None):
                                         0.6)
             primitive_length = [path.segment_length(i) for i in range(3)]
             primitive_type = path.path_type()
-            s = primitive2word(primitive_length, primitive_type)
+            s = primitive2word(primitive_length, primitive_type,d=0.6)
             targets[i, :] = np.ravel(s)
             i += 1
             if i == numSamples:
