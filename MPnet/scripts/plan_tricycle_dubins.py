@@ -44,7 +44,7 @@ if __name__ == "__main__":
     }
 
     MPNetPlan_obj = MPNetPlan(
-        modelFile='data/MPnet_tricycle/dubins_rnn/SGD_lrminus2/mpnet_epoch_1739.pkl',
+        modelFile='data/MPnet_tricycle/dubins_rnn/SGD_lrminus2/mpnet_epoch_1999.pkl',
         steerTo=steerTo,
         **network_param,
     )
