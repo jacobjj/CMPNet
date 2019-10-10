@@ -177,11 +177,11 @@ class MPNetPlan(MPnetBase):
         """
         # start = self.formatInput(start)
         # goal = self.formatInput(goal)
+        noPath = [copy.copy(start), copy.copy(goal)]
         start = torch.tensor(start,dtype=torch.float)
         goal = torch.tensor(goal,dtype=torch.float)
         pA = [start]
         pB = [goal]
-        noPath = [copy.copy(start), copy.copy(goal)]
         tree = 0
         for _ in range(maxPoints):
             if tree == 0:
