@@ -125,7 +125,7 @@ class MPnetTrain(MPnetBase):
                 self.mpNet.eval()
                 train_loss_i = get_numpy(
                     self.mpNet.loss_with_regularize(
-                        self.mpNet.forward(trainInput[sample_index, ...],
+                        self.mpNet(trainInput[sample_index, ...],
                                            trainObs[sample_index, ...]),
                         trainTarget[sample_index, ...]))
 
@@ -143,7 +143,7 @@ class MPnetTrain(MPnetBase):
             self.train_loss.append(train_loss_i)
             self.test_loss.append(test_loss_i)
             # Save the models
-            if (epoch + 1) % 20 == 0:
+            if (epoch + 1) % 50 == 0:
                 model_file = 'mpnet_epoch_%d.pkl' % (epoch)
                 self.save_network_state(osp.join(self.modelPath, model_file))
 

@@ -22,6 +22,15 @@ class DubinsPathGenerator(nn.Module):
         )
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
+        mask_weights = torch.tensor(
+            [
+                [1, 1, 0],
+                [1, 1, 1],
+                [1, 1, 0],
+            ],
+            dtype=torch.float,
+        )
+        self.mask_weights = mask_weights.cuda()
 
     def LeftTurn(self, x, beta):
         return torch.Tensor([
@@ -53,5 +62,6 @@ class DubinsPathGenerator(nn.Module):
             hidden = torch.cat(
                 (self.tanh(hidden[:, :2]), self.relu(hidden[:, 2]).reshape((-1,1))),dim=1
             )
+            hidden = torch.matmul(hidden, torch.diag(self.mask_weights[i, :]))
             s.append(hidden)
         return torch.cat(s,dim=1)

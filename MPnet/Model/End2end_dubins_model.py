@@ -138,7 +138,7 @@ class End2EndMPNet(nn.Module):
         :param y: the next state of the robot
         NOTE: It is safer to call nn.Module.zero_grad() rather than optim.zero_grad(). If the encoder and decoder network has different optim functions, then this takes care for setting gradients of both model to zero.
         """
-        loss = self.loss_with_regularize(self.forward(x, obs), y)
+        loss = self.loss_with_regularize(self.__call__(x, obs), y)
         loss.backward()
         self.opt.step()
         self.zero_grad()
