@@ -41,7 +41,8 @@ LRL = 5
 
 def primitive2word(primitive_length, primitive_type, d):
     s = np.zeros((3, 3))
-    scale = [d,d,1]
+    p = np.zeros((3, 3))
+    scale = [d, d, 1]
     primitive2word_dict = np.array([
         [1, 2, 1],
         [1, 2, 0],
@@ -52,8 +53,10 @@ def primitive2word(primitive_length, primitive_type, d):
     ])
     for i, length in enumerate(primitive_length):
         row = primitive_type
-        s[i, primitive2word_dict[row][i]] = length/scale[primitive2word_dict[row][i]]
-    return s
+        s[i, primitive2word_dict[row][i]] = length / scale[
+            primitive2word_dict[row][i]]
+        p[i, primitive2word_dict[row][i]] = 1
+    return s, p
 
 
 def load_dataset_voxel(N=10000, NP=1, folder_loc=None):
@@ -67,7 +70,7 @@ def load_dataset_voxel(N=10000, NP=1, folder_loc=None):
     numSamples = N * NP
 
     inputs = np.zeros((numSamples, 6))
-    targets = np.zeros((numSamples, 9))
+    targets = np.zeros((numSamples, 9 * 2))
     obs = np.zeros((numSamples, 1, 61, 61))
     i = 0
     done = False
@@ -95,8 +98,8 @@ def load_dataset_voxel(N=10000, NP=1, folder_loc=None):
                                         0.6)
             primitive_length = [path.segment_length(i) for i in range(3)]
             primitive_type = path.path_type()
-            s = primitive2word(primitive_length, primitive_type,d=0.6)
-            targets[i, :] = np.ravel(s)
+            s, p = primitive2word(primitive_length, primitive_type, d=0.6)
+            targets[i, :] = np.concatenate((s.ravel(), p.ravel()))
             i += 1
             if i == numSamples:
                 done = True
