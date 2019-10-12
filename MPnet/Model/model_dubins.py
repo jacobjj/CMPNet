@@ -18,19 +18,13 @@ class DubinsPathGenerator(nn.Module):
         self.fc = nn.Sequential(
             nn.Linear(input_size + 3, 64),
             nn.PReLU(),
-            nn.Linear(64, 3),
         )
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
-        mask_weights = torch.tensor(
-            [
-                [1, 1, 0],
-                [1, 1, 1],
-                [1, 1, 0],
-            ],
-            dtype=torch.float,
-        )
-        self.mask_weights = mask_weights.cuda()
+        self.softmax = nn.Softmax()
+
+        self.final1 = nn.Linear(64, 3)
+        self.final2 = nn.Linear(64, 3)
 
     def LeftTurn(self, x, beta):
         return torch.Tensor([
@@ -56,12 +50,16 @@ class DubinsPathGenerator(nn.Module):
     def forward(self, c):
         hidden = torch.zeros(c.shape[0], 3).cuda()
         s = []
+        p_s = []
         for i in range(3):
             concat = torch.cat((c, hidden), 1)
             hidden = self.fc(concat)
-            hidden = torch.cat(
-                (self.tanh(hidden[:, :2]), self.relu(hidden[:, 2]).reshape((-1,1))),dim=1
-            )
-            hidden = torch.matmul(hidden, torch.diag(self.mask_weights[i, :]))
-            s.append(hidden)
-        return torch.cat(s,dim=1)
+            hidden1 = self.final1(hidden)
+            hidden1 = torch.cat(
+                (self.tanh(hidden1[:, :2]), self.relu(hidden1[:, 2]).reshape(
+                    (-1, 1))),
+                dim=1)
+            s.append(hidden1)
+            p = self.softmax(hidden)
+            p_s.append(p)
+        return [torch.cat(s, dim=1), torch.cat(p, dim=1)]
