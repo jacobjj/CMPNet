@@ -76,16 +76,16 @@ class MPnetTrain(MPnetBase):
         A method to train the network with given data
         """
         print('Loading data...')
-        obs, inputs, targets = self.load_dataset(N=numEnvsTrain,
+        obs, inputs, targets, targets_c = self.load_dataset(N=numEnvsTrain,
                                                  NP=numPaths,
                                                  folder_loc=trainDataPath)
-        trainObs, trainInput, trainTarget = self.format_data(
-            obs, inputs, targets)
+        trainObs, trainInput, trainTarget, trainTarget_c = self.format_data(
+            obs, inputs, targets, targets_c)
 
-        obs_test, inputs_test, targets_test = self.load_dataset(
+        obs_test, inputs_test, targets_test, targets_c_test = self.load_dataset(
             N=numEnvsTest, NP=1, folder_loc=testDataPath)
-        testObs, testInput, testTarget = self.format_data(
-            obs_test, inputs_test, targets_test)
+        testObs, testInput, testTarget, testTarget_c = self.format_data(
+            obs_test, inputs_test, targets_test, targets_c_test)
 
         # Setting the learning rate scheduler
         # scheduler = step_decay_schedule(initial_lr=3e-4,
@@ -103,7 +103,6 @@ class MPnetTrain(MPnetBase):
         indices = np.arange(numEnvsTrain * numPaths)
 
         for epoch in range(self.start_epoch, self.n_epochs):
-            self.mpNet.train()
             batch_loss = 0
             # if epoch % 10 == 0:
             #     newLR = scheduler(epoch)
@@ -115,24 +114,32 @@ class MPnetTrain(MPnetBase):
             for i in range((numEnvsTrain * numPaths) // self.batchSize):
                 sample_index = indices[i * self.batchSize:(i + 1) *
                                        self.batchSize]
-                bobs, bi, bt = trainObs[sample_index, ...], trainInput[
-                    sample_index, :], trainTarget[sample_index, :]
+                bobs, bi = trainObs[sample_index, ...], trainInput[
+                    sample_index, :]
+                bt, bt_c = trainTarget[sample_index, :], trainTarget_c[sample_index, :]
                 # Run gradient descent
-                self.mpNet.fit(bobs, bi, bt)
+                self.mpNet.fit(bobs, bi, bt, bt_c)
                 # grad_norm.append(self.mpNet(bobs, bi, bt))
 
             with torch.no_grad():
                 self.mpNet.eval()
+                network_output= self.mpNet(trainInput[sample_index, ...],
+                                           trainObs[sample_index, ...])
                 train_loss_i = get_numpy(
                     self.mpNet.loss_with_regularize(
-                        self.mpNet(trainInput[sample_index, ...],
-                                           trainObs[sample_index, ...]),
-                        trainTarget[sample_index, ...]))
+                        network_output[0], network_output[1],
+                        trainTarget[sample_index, ...],
+                        trainTarget_c[sample_index, ...]))
 
                 # Test loss
+                network_output = self.mpNet(testInput, testObs)
                 test_loss_i = get_numpy(
                     self.mpNet.loss_with_regularize(
-                        self.mpNet(testInput, testObs), testTarget))
+                        network_output[0],
+                        network_output[1],
+                        testTarget[:, ...],
+                        testTarget_c[:, ...],
+                    ))
 
                 if train_loss_i > 10:
                     import pdb; pdb.set_trace()

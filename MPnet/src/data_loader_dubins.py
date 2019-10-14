@@ -70,7 +70,8 @@ def load_dataset_voxel(N=10000, NP=1, folder_loc=None):
     numSamples = N * NP
 
     inputs = np.zeros((numSamples, 6))
-    targets = np.zeros((numSamples, 9 * 2))
+    targets = np.zeros((numSamples, 9))
+    targets_class = np.zeros((numSamples, 9))
     obs = np.zeros((numSamples, 1, 61, 61))
     i = 0
     done = False
@@ -99,7 +100,8 @@ def load_dataset_voxel(N=10000, NP=1, folder_loc=None):
             primitive_length = [path.segment_length(i) for i in range(3)]
             primitive_type = path.path_type()
             s, p = primitive2word(primitive_length, primitive_type, d=0.6)
-            targets[i, :] = np.concatenate((s.ravel(), p.ravel()))
+            targets[i, :] = s.ravel()
+            targets_class[i, :] = p.ravel()
             i += 1
             if i == numSamples:
                 done = True
@@ -108,6 +110,6 @@ def load_dataset_voxel(N=10000, NP=1, folder_loc=None):
             break
     if not done:
         print("Not enough samples")
-        return obs[:i, ...], inputs[:i, ...], targets[:i, ...]
+        return obs[:i, ...], inputs[:i, ...], targets[:i, ...], targets_class[:i, ...]
 
-    return obs, inputs, targets
+    return obs, inputs, targets, targets_class

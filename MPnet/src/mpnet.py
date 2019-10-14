@@ -117,11 +117,16 @@ class MPnetBase():
         bi = self.normalize(bi, self.worldSize)
         return to_var(bobs), to_var(bi)
 
-    def format_data(self, obs, inputs, targets):
+    def format_data(self, obs, inputs, targets, targets_class):
         """
         Formats the data to be fed into the neural network
         """
         bobs, bi = self.format_input(obs, inputs)
+        # Normalize angles
+        for i in [0,1,3,4,6,7]:
+            targets[:,i] = targets[:,i]/np.pi
         bt = torch.FloatTensor(targets)
         bt = to_var(bt)
-        return bobs, bi, bt
+        bt_c = torch.FloatTensor(targets_class)
+        bt_c = to_var(bt_c)
+        return bobs, bi, bt, bt_c

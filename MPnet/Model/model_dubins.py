@@ -16,7 +16,7 @@ class DubinsPathGenerator(nn.Module):
         super(DubinsPathGenerator, self).__init__()
 
         self.fc = nn.Sequential(
-            nn.Linear(input_size + 3, 64),
+            nn.Linear(input_size + 3*2, 64),
             nn.PReLU(),
         )
         self.relu = nn.ReLU()
@@ -48,7 +48,10 @@ class DubinsPathGenerator(nn.Module):
         ])
 
     def forward(self, c):
-        hidden = torch.zeros(c.shape[0], 3).cuda()
+        hidden = torch.cat((torch.zeros(
+            c.shape[0], 3).cuda(), torch.ones(c.shape[0], 3).cuda() / 3),
+                           dim=1)
+
         s = []
         p_s = []
         for i in range(3):
@@ -59,7 +62,9 @@ class DubinsPathGenerator(nn.Module):
                 (self.tanh(hidden1[:, :2]), self.relu(hidden1[:, 2]).reshape(
                     (-1, 1))),
                 dim=1)
+            hidden_p = self.final2(hidden)
+            hidden_p = self.softmax(hidden_p)
             s.append(hidden1)
-            p = self.softmax(hidden)
-            p_s.append(p)
-        return [torch.cat(s, dim=1), torch.cat(p, dim=1)]
+            p_s.append(hidden_p)
+            hidden = torch.cat((hidden1, hidden_p),dim=1)
+        return [torch.cat(s, dim=1), torch.cat(p_s, dim=1)]

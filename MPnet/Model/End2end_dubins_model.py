@@ -91,8 +91,7 @@ class End2EndMPNet(nn.Module):
             path = dubins.shortest_path(startNode, endNode, d)
             return path.path_length()
         except RuntimeError:
-            import pdb
-            pdb.set_trace()
+            import pdb;pdb.set_trace()
 
     def dubins_path_loss(self, x, y):
         """
@@ -112,25 +111,34 @@ class End2EndMPNet(nn.Module):
         #     return self.mse(pred, truth)
         # NOTE: This cost function is designed for r2d cars and need to change to
         # be compatible with other methods
+        loss = (pred-truth)
         try:
-            loss_cord = self.mse(pred[:, 2], truth[:, 2])
-            loss_angles = torch.mean(normalize_cost(pred[:, 0] - truth[:, 0])**2+normalize_cost(pred[:, 1] - truth[:, 1])**2)
-        except:
-            import pdb; pdb.set_trace()
-            
-        return loss_angles + loss_cord
+            loss[:, 0] = normalize_cost(loss[:, 0].clone())**2
+            loss[:, 1] = normalize_cost(loss[:, 1].clone())**2
+            loss[:, 2] = loss[:, 2].clone()**2
+        except IndexError:
+            import pdb;pdb.set_trace()
+        return loss
 
-    def loss_with_regularize(self, pred, truth):
+    def loss_with_regularize(self, pred, pred_p, truth, truth_h):
         """
         Loss with regularization included.
         """
         loss = 0
         for i in range(3):
-            loss += self.loss(pred[:, i * 3:(i + 1) * 3],
-                              truth[:, i * 3:(i + 1) * 3])
+            # TODO: The gradient might blow up - because of the log term
+            classification_loss = torch.sum(
+                torch.log(pred_p[:, i * 3:(i + 1) * 3]) *
+                truth_h[:, i * 3:(i + 1) * 3].clone(),
+                dim=1)
+            regression_loss = torch.sum(self.loss(
+                pred[:, i * 3:(i + 1) * 3], truth[:, i * 3:(i + 1) * 3]) *
+                                        truth_h[:, i * 3:(i + 1) * 3].clone(),
+                                        dim=1)
+            loss += torch.mean(regression_loss - classification_loss)
         return loss
 
-    def fit(self, obs, x, y):
+    def fit(self, obs, x, y, y_c):
         """
         Updates the network weights to best fit the given data.
         :param obs: the voxel representation of the obstacle space
@@ -138,10 +146,17 @@ class End2EndMPNet(nn.Module):
         :param y: the next state of the robot
         NOTE: It is safer to call nn.Module.zero_grad() rather than optim.zero_grad(). If the encoder and decoder network has different optim functions, then this takes care for setting gradients of both model to zero.
         """
-        loss = self.loss_with_regularize(self.__call__(x, obs), y)
-        loss.backward()
-        self.opt.step()
-        self.zero_grad()
+        with torch.autograd.set_detect_anomaly(True):
+            network_output = self.__call__(x, obs)
+            loss = self.loss_with_regularize(
+                network_output[0],
+                network_output[1],
+                y,
+                y_c,
+            )
+            loss.backward()
+            self.opt.step()
+            self.zero_grad()
 
     def fit_distribution(self, obs, x, y):
         """
