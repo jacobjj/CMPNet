@@ -21,7 +21,7 @@ class DubinsPathGenerator(nn.Module):
         )
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
-        self.softmax = nn.Softmax()
+        self.softmax = nn.Softmax(dim=1)
 
         self.final1 = nn.Linear(64, 3)
         self.final2 = nn.Linear(64, 3)
