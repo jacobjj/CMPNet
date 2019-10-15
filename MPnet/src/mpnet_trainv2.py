@@ -53,6 +53,8 @@ class MPnetTrain(MPnetBase):
         super().__init__(**kwargs)
         self.train_loss = []
         self.test_loss = []
+        self.train_loss_reg = []
+        self.train_loss_cls = []
         self.start_epoch = 0
         self.n_epochs = n_epochs
         self.batchSize = batchSize
@@ -111,6 +113,7 @@ class MPnetTrain(MPnetBase):
             #     self.mpNet.set_opt(torch.optim.SGD, 10**lr_range[epoch // 2])
             np.random.shuffle(indices)
             grad_norm = []
+            self.mpNet.train()
             for i in range((numEnvsTrain * numPaths) // self.batchSize):
                 sample_index = indices[i * self.batchSize:(i + 1) *
                                        self.batchSize]
@@ -125,28 +128,35 @@ class MPnetTrain(MPnetBase):
                 self.mpNet.eval()
                 network_output= self.mpNet(trainInput[sample_index, ...],
                                            trainObs[sample_index, ...])
-                train_loss_i = get_numpy(
-                    self.mpNet.loss_with_regularize(
-                        network_output[0], network_output[1],
-                        trainTarget[sample_index, ...],
-                        trainTarget_c[sample_index, ...]))
+                # Train loss
+                train_loss_i, train_loss_reg_i, train_loss_cls_i = self.mpNet.loss_with_regularize(
+                    network_output[0],
+                    network_output[1],
+                    trainTarget[sample_index, ...],
+                    trainTarget_c[sample_index, ...],
+                )
 
                 # Test loss
                 network_output = self.mpNet(testInput, testObs)
-                test_loss_i = get_numpy(
-                    self.mpNet.loss_with_regularize(
-                        network_output[0],
-                        network_output[1],
-                        testTarget[:, ...],
-                        testTarget_c[:, ...],
-                    ))
+                test_loss_i, _,_ = self.mpNet.loss_with_regularize(
+                    network_output[0],
+                    network_output[1],
+                    testTarget[:, ...],
+                    testTarget_c[:, ...],
+                )
 
                 if train_loss_i > 10:
                     import pdb; pdb.set_trace()
 
             # print('Epoch {} - mean grad norm {}'.format(epoch, np.mean(grad_norm)))
+            print('Epoch {} - train regression  loss: {}'.format(epoch, train_loss_reg_i))
+            print('Epoch {} - train classification loss: {}'.format(epoch, train_loss_cls_i))
             print('Epoch {} - train loss: {}'.format(epoch, train_loss_i))
             print('Epoch {} - test loss: {}'.format(epoch, test_loss_i))
+
+
+            self.train_loss_cls.append(train_loss_cls_i)
+            self.train_loss_reg.append(train_loss_reg_i)
             self.train_loss.append(train_loss_i)
             self.test_loss.append(test_loss_i)
             # Save the models
@@ -155,6 +165,8 @@ class MPnetTrain(MPnetBase):
                 self.save_network_state(osp.join(self.modelPath, model_file))
 
             results = {
+                'train_loss_reg': self.train_loss_reg,
+                'train_loss_cls': self.train_loss_cls,
                 'test_loss': self.test_loss,
                 'train_loss': self.train_loss
             }
@@ -163,5 +175,6 @@ class MPnetTrain(MPnetBase):
                 fieldnames = results.keys()
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
-                for i, j in zip(self.test_loss, self.train_loss):
-                    writer.writerow({'test_loss': i, 'train_loss': j})
+                row_data = [dict(zip(fieldnames,[results[key][i] for key in fieldnames])) for i in range(len(results['train_loss']))]
+                for row in row_data:
+                    writer.writerow(row)
