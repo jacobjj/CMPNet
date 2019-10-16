@@ -9,6 +9,8 @@ from src.mpnet_plan import MPNetPlan
 from src.plan_dubins import steerTo
 from BC.utils.misc import generateVoxelData
 from BC.scripts.point_cloud import generate_point_cloud
+import dubins
+
 
 
 def steerTo_env(start, goal, IsInCollision):
@@ -40,11 +42,11 @@ if __name__ == "__main__":
         'worldSize': [2.75, 2.75, np.pi],
         'AE': voxelNet,
         'MLP': model.DubinsPathGenerator,
-        'modelPath': 'data/MPnet_tricycle/dubins_rnn/SGD_lrminus2/'
+        'modelPath': 'data/MPnet_tricycle/dubins_rnn/SGD_lrminus2_class_reg/'
     }
 
     MPNetPlan_obj = MPNetPlan(
-        modelFile='data/MPnet_tricycle/dubins_rnn/SGD_lrminus2/mpnet_epoch_1999.pkl',
+        modelFile='data/MPnet_tricycle/dubins_rnn/SGD_lrminus2_class_reg/mpnet_epoch_899.pkl',
         steerTo=steerTo,
         **network_param,
     )
@@ -62,8 +64,13 @@ if __name__ == "__main__":
     )
 
     if path:
+        plt.figure()
         plt.scatter(pointcloud[:, 0], pointcloud[:, 1])
         for p in path:
             plt.scatter(p[0], p[1], marker='x', color='r')
-        plt.show()
+        for i,p in enumerate(path[:-1]):
+            p = dubins.shortest_path(tuple(p[i]), tuple(p[i + 1]), d=0.6)
+            config, _ = p.sample_many(0.1)
+            plt.plot(config)
 
+        plt.show()

@@ -135,6 +135,9 @@ class MPnetTrain(MPnetBase):
                     trainTarget[sample_index, ...],
                     trainTarget_c[sample_index, ...],
                 )
+                train_loss_cls_i = get_numpy(train_loss_cls_i)
+                train_loss_reg_i = get_numpy(train_loss_reg_i)
+                train_loss_i = get_numpy(train_loss_i)
 
                 # Test loss
                 network_output = self.mpNet(testInput, testObs)
@@ -144,6 +147,7 @@ class MPnetTrain(MPnetBase):
                     testTarget[:, ...],
                     testTarget_c[:, ...],
                 )
+                test_loss_i = get_numpy(test_loss_i)
 
                 if train_loss_i > 10:
                     import pdb; pdb.set_trace()

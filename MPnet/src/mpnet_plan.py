@@ -183,38 +183,45 @@ class MPNetPlan(MPnetBase):
         pA = [start]
         pB = [goal]
         tree = 0
-        for _ in range(maxPoints):
-            if tree == 0:
-                network_input = np.concatenate((start, goal))
-                network_input = self.formatInput(network_input)
-                tobs, tInput = self.format_input(obs, network_input)
-                word = self.mpNet(tInput, tobs).squeeze().data.cpu()
-                start = word2primitive(word, start, 0.6)
-                pA.append(start)
-                tree = 1
-            else:
-                network_input = np.concatenate((goal, start))
-                network_input = self.formatInput(network_input)
-                tobs, tInput = self.format_input(obs, network_input)
-                word = self.mpNet(tInput, tobs).squeeze(0).data.cpu()
-                word = word.squeeze().data.cpu()
-                goal = word2primitive(word, goal, 0.6)
-                pB.append(goal)
-                tree = 0
+
+        with torch.no_grad():
+            for _ in range(maxPoints):
+                if tree == 0:
+                    network_input = np.concatenate((start, goal))
+                    network_input = self.formatInput(network_input)
+                    tobs, tInput = self.format_input(obs, network_input)
+                    word, prob = self.mpNet(tInput, tobs)
+                    word = word.squeeze().data.cpu()
+                    prob = prob.squeeze().data.cpu()
+                    start = self.denormalize(start, self.worldSize)
+                    start = word2primitive(word, prob, start, 0.6)
+                    pA.append(start)
+                    # tree = 1
+                else:
+                    network_input = np.concatenate((goal, start))
+                    network_input = self.formatInput(network_input)
+                    tobs, tInput = self.format_input(obs, network_input)
+                    word, prob = self.mpNet(tInput, tobs)
+                    word = word.squeeze().data.cpu()
+                    prob = prob.squeeze().data.cpu()
+                    goal = self.denormalize(goal, self.worldSize)
+                    goal = word2primitive(word, prob, goal, 0.6)
+                    pB.append(goal)
+                    tree = 0
 
             target_reached = self.steerTo(start.squeeze(), goal.squeeze(),
-                                          IsInCollision)
-            if figParam is not None:
-                ax = figParam['axis']
-                pointCloud = figParam['pointCloud']
-                sampledPoints = pA + pB
-                self.plotPoints(ax, sampledPoints)
-                ax.set_xlim([-5, 5])
-                ax.set_ylim([-5, 5])
-                plt.pause(1)
-            if target_reached:
-                pA.extend(reversed(pB))
-                return pA, 0
+                                      IsInCollision)
+        if figParam is not None:
+            ax = figParam['axis']
+            pointCloud = figParam['pointCloud']
+            sampledPoints = pA + pB
+            self.plotPoints(ax, sampledPoints)
+            ax.set_xlim([-5, 5])
+            ax.set_ylim([-5, 5])
+            plt.pause(1)
+        if target_reached:
+            pA.extend(reversed(pB))
+            return pA, 0
         return noPath, 0
 
     def lvc(self, path, IsInCollision):

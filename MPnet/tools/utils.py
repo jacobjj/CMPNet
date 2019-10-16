@@ -34,7 +34,7 @@ def StraightTrun(x, gamma):
     ])
 
 
-def word2primitive(word, start,d):
+def word2primitive(word, p, start, d):
     """
     Converts the word back to the primitive path
     Define the word as follows:
@@ -50,12 +50,16 @@ def word2primitive(word, start,d):
     LRL = 5
     """
     F = [RightTurn, LeftTurn, StraightTrun]
+    for i in [0,1,3,4,6,7]:
+        word[i] = word[i] * np.pi
     word = word.reshape((3, 3))
+    p = p.reshape((3, 3))
     for i in range(3):
-        v, index = torch.max(word[i, :], dim=0)
-        if index ==0 or index==1:
-            start[:2] = start[:2]/d
+        _, index = torch.max(p[i, :], dim=0)
+        v = word[i, index]
+        if index == 0 or index == 1:
+            start[:2] = start[:2] / d
         start = F[index](start, v)
-        if index==0 or index==1:
-            start[:2] = start[:2]*d
+        if index == 0 or index == 1:
+            start[:2] = start[:2] * d
     return start
