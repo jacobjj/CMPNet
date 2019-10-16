@@ -18,13 +18,20 @@ class DubinsPathGenerator(nn.Module):
         self.fc = nn.Sequential(
             nn.Linear(input_size + 3*2, 64),
             nn.PReLU(),
+            nn.Dropout(),
+            nn.Linear(64, 64),
+            nn.PReLU(),
+            nn.Dropout(),
+            nn.Linear(64, 32),
+            nn.PReLU(),
+            nn.Dropout(),
         )
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
         self.softmax = nn.Softmax(dim=1)
 
-        self.final1 = nn.Linear(64, 3)
-        self.final2 = nn.Linear(64, 3)
+        self.final1 = nn.Linear(32, 3)
+        self.final2 = nn.Linear(32, 3)
 
     def LeftTurn(self, x, beta):
         return torch.Tensor([
