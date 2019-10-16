@@ -128,9 +128,8 @@ class End2EndMPNet(nn.Module):
         regression_loss = 0
         classification_loss = 0
         for i in range(3):
-            # TODO: The gradient might blow up - because of the log term
             classification_loss = torch.sum(
-                torch.log(pred_p[:, i * 3:(i + 1) * 3]) *
+                torch.log(pred_p[:, i * 3:(i + 1) * 3] + 1e-7) *
                 truth_h[:, i * 3:(i + 1) * 3].clone(),
                 dim=1)
             regression_loss = torch.sum(self.loss(
