@@ -118,7 +118,7 @@ class End2EndMPNet(nn.Module):
             loss[:, 2] = loss[:, 2].clone()**2
         except IndexError:
             import pdb;pdb.set_trace()
-        return loss
+        return torch.sqrt(loss)
 
     def loss_with_regularize(self, pred, pred_p, truth, truth_h):
         """
