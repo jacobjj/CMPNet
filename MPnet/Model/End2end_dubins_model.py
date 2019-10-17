@@ -54,6 +54,7 @@ class End2EndMPNet(nn.Module):
 
         self.num_seen = np.zeros(n_tasks).astype(int)
         self.grad_step = grad_step
+        self.alpha = 5
         self.AE_input_size = AE_input_size
         # Remove any gradient set during initialization
         self.zero_grad()
@@ -118,7 +119,7 @@ class End2EndMPNet(nn.Module):
             loss[:, 2] = loss[:, 2].clone()**2
         except IndexError:
             import pdb;pdb.set_trace()
-        return torch.sqrt(loss)
+        return loss
 
     def loss_with_regularize(self, pred, pred_p, truth, truth_h):
         """
@@ -135,7 +136,7 @@ class End2EndMPNet(nn.Module):
             regression_loss = torch.sum(self.loss(
                 pred[:, i * 3:(i + 1) * 3], truth[:, i * 3:(i + 1) * 3]) *
                                         truth_h[:, i * 3:(i + 1) * 3].clone(),
-                                        dim=1)
+                                        dim=1)*self.alpha
             loss += torch.mean(regression_loss - classification_loss)
             regression_loss = torch.mean(regression_loss)
             classification_loss = torch.mean(-classification_loss)
