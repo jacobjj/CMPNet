@@ -53,8 +53,6 @@ class MPnetTrain(MPnetBase):
         super().__init__(**kwargs)
         self.train_loss = []
         self.test_loss = []
-        self.train_loss_reg = []
-        self.train_loss_cls = []
         self.start_epoch = 0
         self.n_epochs = n_epochs
         self.batchSize = batchSize
@@ -151,8 +149,6 @@ class MPnetTrain(MPnetBase):
             print('Epoch {} - train loss: {}'.format(epoch, train_loss_i))
             print('Epoch {} - test loss: {}'.format(epoch, test_loss_i))
 
-            self.train_loss_cls.append(train_loss_cls_i)
-            self.train_loss_reg.append(train_loss_reg_i)
             self.train_loss.append(train_loss_i)
             self.test_loss.append(test_loss_i)
             # Save the models
@@ -161,8 +157,6 @@ class MPnetTrain(MPnetBase):
                 self.save_network_state(osp.join(self.modelPath, model_file))
 
             results = {
-                'train_loss_reg': self.train_loss_reg,
-                'train_loss_cls': self.train_loss_cls,
                 'test_loss': self.test_loss,
                 'train_loss': self.train_loss
             }
