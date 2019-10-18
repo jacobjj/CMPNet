@@ -16,7 +16,7 @@ class DubinsPathGenerator(nn.Module):
         super(DubinsPathGenerator, self).__init__()
 
         self.fc = nn.Sequential(
-            nn.Linear(input_size + 3*2, 64),
+            nn.Linear(input_size + 3 * 2, 64),
             nn.PReLU(),
             nn.Dropout(),
             nn.Linear(64, 64),
@@ -55,23 +55,16 @@ class DubinsPathGenerator(nn.Module):
         ])
 
     def forward(self, c):
-        hidden = torch.cat((torch.zeros(
-            c.shape[0], 3).cuda(), torch.ones(c.shape[0], 3).cuda() / 3),
-                           dim=1)
-
-        s = []
-        p_s = []
-        for i in range(3):
-            concat = torch.cat((c, hidden), 1)
-            hidden = self.fc(concat)
-            hidden1 = self.final1(hidden)
-            hidden1 = torch.cat(
-                (self.tanh(hidden1[:, :2]), self.relu(hidden1[:, 2]).reshape(
-                    (-1, 1))),
-                dim=1)
-            hidden_p = self.final2(hidden)
-            hidden_p = self.softmax(hidden_p)
-            s.append(hidden1)
-            p_s.append(hidden_p)
-            hidden = torch.cat((hidden1, hidden_p),dim=1)
-        return [torch.cat(s, dim=1), torch.cat(p_s, dim=1)]
+        x = self.fc(c)
+        x = torch.cat(
+            (
+                self.tanh(x[:, :2]),
+                self.relu(x[:, 2]).reshape((-1, 1)),
+                self.tanh(x[:, 3:5]),
+                self.relu(x[:, 5]).reshape((-1, 1)),
+                self.tanh(x[:, 6:8]),
+                self.relu(x[:, 8]).reshape((-1, 1))
+            ),
+            dim=1,
+        )
+        return x

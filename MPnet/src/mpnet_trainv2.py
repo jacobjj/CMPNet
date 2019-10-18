@@ -78,16 +78,16 @@ class MPnetTrain(MPnetBase):
         A method to train the network with given data
         """
         print('Loading data...')
-        obs, inputs, targets, targets_c = self.load_dataset(N=numEnvsTrain,
+        obs, inputs, targets = self.load_dataset(N=numEnvsTrain,
                                                  NP=numPaths,
                                                  folder_loc=trainDataPath)
-        trainObs, trainInput, trainTarget, trainTarget_c = self.format_data(
-            obs, inputs, targets, targets_c)
+        trainObs, trainInput, trainTarget = self.format_data(
+            obs, inputs, targets)
 
-        obs_test, inputs_test, targets_test, targets_c_test = self.load_dataset(
+        obs_test, inputs_test, targets_test = self.load_dataset(
             N=numEnvsTest, NP=1, folder_loc=testDataPath)
-        testObs, testInput, testTarget, testTarget_c = self.format_data(
-            obs_test, inputs_test, targets_test, targets_c_test)
+        testObs, testInput, testTarget = self.format_data(
+            obs_test, inputs_test, targets_test)
 
         # Setting the learning rate scheduler
         # scheduler = step_decay_schedule(initial_lr=3e-4,
@@ -117,47 +117,39 @@ class MPnetTrain(MPnetBase):
             for i in range((numEnvsTrain * numPaths) // self.batchSize):
                 sample_index = indices[i * self.batchSize:(i + 1) *
                                        self.batchSize]
-                bobs, bi = trainObs[sample_index, ...], trainInput[
-                    sample_index, :]
-                bt, bt_c = trainTarget[sample_index, :], trainTarget_c[sample_index, :]
+                bobs, bi = trainObs[sample_index,
+                                    ...], trainInput[sample_index, :]
+                bt = trainTarget[sample_index, :]
                 # Run gradient descent
-                self.mpNet.fit(bobs, bi, bt, bt_c)
+                self.mpNet.fit(bobs, bi, bt)
                 # grad_norm.append(self.mpNet(bobs, bi, bt))
 
             with torch.no_grad():
                 self.mpNet.eval()
-                network_output= self.mpNet(trainInput[sample_index, ...],
-                                           trainObs[sample_index, ...])
+                network_output = self.mpNet(trainInput[sample_index, ...],
+                                            trainObs[sample_index, ...])
                 # Train loss
-                train_loss_i, train_loss_reg_i, train_loss_cls_i = self.mpNet.loss_with_regularize(
+                train_loss_i = self.mpNet.loss_with_regularize(
                     network_output[0],
                     network_output[1],
-                    trainTarget[sample_index, ...],
-                    trainTarget_c[sample_index, ...],
+                    trainTarget[sample_index, ...]
                 )
-                train_loss_cls_i = get_numpy(train_loss_cls_i)
-                train_loss_reg_i = get_numpy(train_loss_reg_i)
-                train_loss_i = get_numpy(train_loss_i)
 
                 # Test loss
                 network_output = self.mpNet(testInput, testObs)
-                test_loss_i, _,_ = self.mpNet.loss_with_regularize(
+                test_loss_i, = self.mpNet.loss_with_regularize(
                     network_output[0],
                     network_output[1],
-                    testTarget[:, ...],
-                    testTarget_c[:, ...],
+                    testTarget[:, ...]
                 )
                 test_loss_i = get_numpy(test_loss_i)
 
                 if train_loss_i > 10:
-                    import pdb; pdb.set_trace()
+                    import pdb;pdb.set_trace()
 
             # print('Epoch {} - mean grad norm {}'.format(epoch, np.mean(grad_norm)))
-            print('Epoch {} - train regression  loss: {}'.format(epoch, train_loss_reg_i))
-            print('Epoch {} - train classification loss: {}'.format(epoch, train_loss_cls_i))
             print('Epoch {} - train loss: {}'.format(epoch, train_loss_i))
             print('Epoch {} - test loss: {}'.format(epoch, test_loss_i))
-
 
             self.train_loss_cls.append(train_loss_cls_i)
             self.train_loss_reg.append(train_loss_reg_i)
@@ -179,6 +171,11 @@ class MPnetTrain(MPnetBase):
                 fieldnames = results.keys()
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
-                row_data = [dict(zip(fieldnames,[results[key][i] for key in fieldnames])) for i in range(len(results['train_loss']))]
+                row_data = [
+                    dict(
+                        zip(fieldnames,
+                            [results[key][i] for key in fieldnames]))
+                    for i in range(len(results['train_loss']))
+                ]
                 for row in row_data:
                     writer.writerow(row)

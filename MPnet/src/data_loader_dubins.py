@@ -41,7 +41,6 @@ LRL = 5
 
 def primitive2word(primitive_length, primitive_type, d):
     s = np.zeros((3, 3))
-    p = np.zeros((3, 3))
     scale = [d, d, 1]
     primitive2word_dict = np.array([
         [1, 2, 1],
@@ -55,8 +54,7 @@ def primitive2word(primitive_length, primitive_type, d):
         row = primitive_type
         s[i, primitive2word_dict[row][i]] = length / scale[
             primitive2word_dict[row][i]]
-        p[i, primitive2word_dict[row][i]] = 1
-    return s, p
+    return s
 
 
 def load_dataset_voxel(N=10000, NP=1, folder_loc=None):
@@ -71,7 +69,7 @@ def load_dataset_voxel(N=10000, NP=1, folder_loc=None):
 
     inputs = np.zeros((numSamples, 6))
     targets = np.zeros((numSamples, 9))
-    targets_class = np.zeros((numSamples, 9))
+
     obs = np.zeros((numSamples, 1, 61, 61))
     i = 0
     done = False
@@ -99,9 +97,8 @@ def load_dataset_voxel(N=10000, NP=1, folder_loc=None):
                                         0.6)
             primitive_length = [path.segment_length(i) for i in range(3)]
             primitive_type = path.path_type()
-            s, p = primitive2word(primitive_length, primitive_type, d=0.6)
+            s = primitive2word(primitive_length, primitive_type, d=0.6)
             targets[i, :] = s.ravel()
-            targets_class[i, :] = p.ravel()
             i += 1
             if i == numSamples:
                 done = True
@@ -110,6 +107,6 @@ def load_dataset_voxel(N=10000, NP=1, folder_loc=None):
             break
     if not done:
         print("Not enough samples")
-        return obs[:i, ...], inputs[:i, ...], targets[:i, ...], targets_class[:i, ...]
+        return obs[:i, ...], inputs[:i, ...], targets[:i, ...]
 
-    return obs, inputs, targets, targets_class
+    return obs, inputs, targets
