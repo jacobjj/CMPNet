@@ -54,7 +54,6 @@ class End2EndMPNet(nn.Module):
 
         self.num_seen = np.zeros(n_tasks).astype(int)
         self.grad_step = grad_step
-        self.alpha = 5
         self.AE_input_size = AE_input_size
         # Remove any gradient set during initialization
         self.zero_grad()
@@ -121,26 +120,19 @@ class End2EndMPNet(nn.Module):
             import pdb;pdb.set_trace()
         return loss
 
-    def loss_with_regularize(self, pred, pred_p, truth, truth_h):
+    def loss_with_regularize(self, pred, truth):
         """
         Loss with regularization included.
         """
         loss = 0
-        regression_loss = 0
-        classification_loss = 0
         for i in range(3):
-            classification_loss = torch.sum(
-                torch.log(pred_p[:, i * 3:(i + 1) * 3] + 1e-7) *
-                truth_h[:, i * 3:(i + 1) * 3].clone(),
-                dim=1)
-            regression_loss = torch.sum(self.loss(
-                pred[:, i * 3:(i + 1) * 3], truth[:, i * 3:(i + 1) * 3]) *
-                                        truth_h[:, i * 3:(i + 1) * 3].clone(),
-                                        dim=1)*self.alpha
-            loss += torch.mean(regression_loss - classification_loss)
-            regression_loss = torch.mean(regression_loss)
-            classification_loss = torch.mean(-classification_loss)
-        return loss, regression_loss, classification_loss
+            regression_loss = torch.sum(
+                self.loss(pred[:, i * 3:(i + 1) * 3],
+                          truth[:, i * 3:(i + 1) * 3]),
+                dim=1,
+            )
+            loss += torch.mean(regression_loss)
+        return loss
 
     def fit(self, obs, x, y, y_c):
         """
@@ -152,11 +144,9 @@ class End2EndMPNet(nn.Module):
         """
         with torch.autograd.set_detect_anomaly(True):
             network_output = self.__call__(x, obs)
-            loss,_,_ = self.loss_with_regularize(
-                network_output[0],
-                network_output[1],
+            loss = self.loss_with_regularize(
+                network_output,
                 y,
-                y_c,
             )
             loss.backward()
             self.opt.step()
