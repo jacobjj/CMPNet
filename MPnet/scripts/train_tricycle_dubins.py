@@ -32,7 +32,7 @@ def train(args):
     trainNetwork = MPnetTrain(
         load_dataset=load_dataset_voxel,
         n_epochs=1000,
-        batchSize=64,
+        batchSize=128,
         opt=torch.optim.Adagrad,
         # learning_rate=1e-5,
         **network_parameters,

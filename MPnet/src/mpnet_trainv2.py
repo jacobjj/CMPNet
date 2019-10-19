@@ -128,18 +128,17 @@ class MPnetTrain(MPnetBase):
                                             trainObs[sample_index, ...])
                 # Train loss
                 train_loss_i = self.mpNet.loss_with_regularize(
-                    network_output[0],
-                    network_output[1],
+                    network_output,
                     trainTarget[sample_index, ...]
                 )
+                train_loss_i = get_numpy(train_loss_i)
 
                 # Test loss
                 network_output = self.mpNet(testInput, testObs)
-                test_loss_i, = self.mpNet.loss_with_regularize(
-                    network_output[0],
-                    network_output[1],
-                    testTarget[:, ...]
-                )
+                test_loss_i = self.mpNet.loss_with_regularize(
+                    network_output,
+                    testTarget
+                    )
                 test_loss_i = get_numpy(test_loss_i)
 
                 if train_loss_i > 10:
