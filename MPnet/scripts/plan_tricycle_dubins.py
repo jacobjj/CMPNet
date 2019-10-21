@@ -42,11 +42,11 @@ if __name__ == "__main__":
         'worldSize': [2.75, 2.75, np.pi],
         'AE': voxelNet,
         'MLP': model.DubinsPathGenerator,
-        'modelPath': 'data/MPnet_tricycle/dubins_rnn/SGD_lrminus2_class_reg/'
+        'modelPath': 'data/MPnet_tricycle/dubins_fc/Adagrad_lrminus2/'
     }
 
     MPNetPlan_obj = MPNetPlan(
-        modelFile='data/MPnet_tricycle/dubins_rnn/SGD_lrminus2_class_reg/mpnet_epoch_899.pkl',
+        modelFile='data/MPnet_tricycle/dubins_fc/Adagrad_lrminus2/mpnet_epoch_999.pkl',
         steerTo=steerTo,
         **network_param,
     )
