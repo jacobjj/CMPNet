@@ -68,9 +68,10 @@ if __name__ == "__main__":
         plt.scatter(pointcloud[:, 0], pointcloud[:, 1])
         for p in path:
             plt.scatter(p[0], p[1], marker='x', color='r')
-        for i,p in enumerate(path[:-1]):
-            p = dubins.shortest_path(tuple(p[i]), tuple(p[i + 1]), d=0.6)
+        for i,_ in enumerate(path[:-1]):
+            p = dubins.shortest_path(tuple(path[i].numpy()), tuple(path[i + 1].numpy()), 0.6)
             config, _ = p.sample_many(0.1)
-            plt.plot(config)
+            config = np.array(config)
+            plt.plot(config[:, 0], config[:, 1])
 
         plt.show()
