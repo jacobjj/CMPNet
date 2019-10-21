@@ -84,11 +84,8 @@ class MPNetPlan(MPnetBase):
         : return path list: key points to generate a path
         """
         obs = torch.from_numpy(obs)
-        # NOTE: Do we need to convert them here or do we need to convert them only while  executing in the network
-        # path = [
-        #     torch.from_numpy(start).type(torch.FloatTensor),
-        #     torch.from_numpy(goal).type(torch.FloatTensor)
-        # ]
+        start = torch.tensor(start,dtype=torch.float)
+        goal = torch.tensor(goal,dtype=torch.float)
         path = [start, goal]
         fig, (axMain, axMini) = plt.subplots(1, 2)
         figParam = {'axis': axMini, 'pointCloud': pointCloud}
@@ -130,8 +127,10 @@ class MPNetPlan(MPnetBase):
 
                 print("Remove points in Collision")
                 # Remove points that are in collision
+                print(miniPath)
                 if len(miniPath) > 2:
                     miniPath = self.removeCollision(miniPath, IsInCollision)
+                print(miniPath)
 
                 axMini.clear()
                 self.plotMainPath(axMini, [], pointCloud)
@@ -143,8 +142,7 @@ class MPNetPlan(MPnetBase):
 
                 # append miniPath to path
                 for i, point in enumerate(miniPath):
-                    path.insert(marker + i, point)
-
+                    path.insert(marker + i, point.clone())
                 axMain.clear()
                 self.plotMainPath(axMain, path, pointCloud)
                 for ax in (axMain, axMini):
@@ -178,11 +176,8 @@ class MPNetPlan(MPnetBase):
         """
         # start = self.formatInput(start)
         # goal = self.formatInput(goal)
-        noPath = [copy.copy(start), copy.copy(goal)]
-        start = torch.tensor(start,dtype=torch.float)
-        goal = torch.tensor(goal,dtype=torch.float)
-        pA = [start]
-        pB = [goal]
+        noPath = [start.clone(), goal.clone()]
+        pA = [start.clone()]
         tree = 0
 
         with torch.no_grad():
@@ -199,13 +194,13 @@ class MPNetPlan(MPnetBase):
         if figParam is not None:
             ax = figParam['axis']
             pointCloud = figParam['pointCloud']
-            sampledPoints = pA + pB
+            sampledPoints = pA
             self.plotPoints(ax, sampledPoints)
             ax.set_xlim([-5, 5])
             ax.set_ylim([-5, 5])
             plt.pause(1)
         if target_reached:
-            pA.extend(reversed(pB))
+            pA.append(goal.clone())
             return pA, 0
         return noPath, 0
 
@@ -224,9 +219,9 @@ class MPNetPlan(MPnetBase):
                 if ind == 1:
                     pc = []
                     for k in range(0, i + 1):
-                        pc.append(path[k])
+                        pc.append(path[k].clone())
                     for k in range(j, len(path)):
-                        pc.append(path[k])
+                        pc.append(path[k].clone())
                     return self.lvc(pc, IsInCollision)
         return path
 
@@ -249,5 +244,5 @@ class MPNetPlan(MPnetBase):
 
         for i in range(0, len(path)):
             if not IsInCollision(path[i]):
-                new_path.append(path[i])
+                new_path.append(path[i].clone())
         return new_path
