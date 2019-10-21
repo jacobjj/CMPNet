@@ -192,8 +192,7 @@ class MPNetPlan(MPnetBase):
                 tobs, tInput = self.format_input(obs, network_input)
                 word = self.mpNet(tInput, tobs).squeeze().data.cpu()
                 start = word2primitive(word, start, 0.6)
-                print(start)
-                pA.append(start)
+                pA.append(start.clone())
 
             target_reached = self.steerTo(start.squeeze(), goal.squeeze(),
                                       IsInCollision)
