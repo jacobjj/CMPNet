@@ -22,7 +22,7 @@ def RightTurn(x, alpha):
     return torch.Tensor([
         x[0] - torch.sin(x[2] - alpha) + torch.sin(x[2]),
         x[1] + torch.cos(x[2] - alpha) - torch.cos(x[2]),
-        normalize_angle(alpha - x[2]),
+        normalize_angle(-alpha + x[2]),
     ])
 
 
@@ -34,7 +34,7 @@ def StraightTrun(x, gamma):
     ])
 
 
-def word2primitive(word, p, start, d):
+def word2primitive(word, start, d):
     """
     Converts the word back to the primitive path
     Define the word as follows:
@@ -50,16 +50,20 @@ def word2primitive(word, p, start, d):
     LRL = 5
     """
     F = [RightTurn, LeftTurn, StraightTrun]
+    temp_word = torch.abs(word.clone())
     for i in [0,1,3,4,6,7]:
+        temp_word[i] = temp_word[i] * np.pi * d
         word[i] = word[i] * np.pi
     word = word.reshape((3, 3))
-    p = p.reshape((3, 3))
+    temp_word = temp_word.reshape((3,3))
+    x_i = torch.Tensor([0, 0, start[2]])
     for i in range(3):
-        _, index = torch.max(p[i, :], dim=0)
-        v = word[i, index]
-        if index == 0 or index == 1:
-            start[:2] = start[:2] / d
-        start = F[index](start, v)
-        if index == 0 or index == 1:
-            start[:2] = start[:2] * d
+        _, index = torch.max(temp_word[i, :], dim=0)
+        v = torch.max(word[i, :])
+        if index == 2:
+            v = v/d
+        x_i = F[index](x_i, v)
+    start[0] += x_i[0] * d
+    start[1] += x_i[1] * d
+    start[2] = normalize_angle(start[2] + x_i[2])
     return start
