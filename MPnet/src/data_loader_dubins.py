@@ -38,6 +38,11 @@ RLR = 4
 LRL = 5
 """
 
+def normalize_angle(z):
+    """
+    A function to wrap around -1 and 1
+    """
+    return (z + np.pi) % (2 * np.pi) - np.pi
 
 def primitive2word(primitive_length, primitive_type, d):
     s = np.zeros((3, 3))
@@ -52,7 +57,11 @@ def primitive2word(primitive_length, primitive_type, d):
     ])
     for i, length in enumerate(primitive_length):
         row = primitive_type
-        s[i, primitive2word_dict[row][i]] = length / scale[
+        if i!=2:
+            s[i, primitive2word_dict[row][i]] = normalize_angle( length / scale[
+            primitive2word_dict[row][i]])
+        else:
+            s[i, primitive2word_dict[row][i]] = length / scale[
             primitive2word_dict[row][i]]
     return s
 
