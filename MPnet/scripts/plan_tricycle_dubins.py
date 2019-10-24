@@ -38,7 +38,7 @@ if __name__ == "__main__":
         'normalize': normalize,
         'denormalize': unnormalize,
         'encoderInputDim': [1, 61, 61],
-        'encoderOutputDim': 64,
+        'encoderOutputDim': 128,
         'worldSize': [2.75, 2.75, np.pi],
         'AE': voxelNet,
         'MLP': model.DubinsPathGenerator,

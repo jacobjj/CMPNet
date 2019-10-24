@@ -22,7 +22,7 @@ def train(args):
         'normalize': normalize,
         'denormalize': denormalize,
         'encoderInputDim': [1, 61, 61],
-        'encoderOutputDim': 64,
+        'encoderOutputDim': 128,
         'worldSize': [2.75, 2.75, np.pi],
         'AE': voxelNet,
         'MLP': MLP,

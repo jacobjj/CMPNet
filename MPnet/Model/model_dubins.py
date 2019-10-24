@@ -16,10 +16,19 @@ class DubinsPathGenerator(nn.Module):
         super(DubinsPathGenerator, self).__init__()
 
         self.fc = nn.Sequential(
-            nn.Linear(input_size , 64),
+            # nn.Linear(input_size , 64),
+            # nn.PReLU(),
+            # nn.Dropout(),
+            # nn.Linear(64, 64),
+            # nn.PReLU(),
+            # nn.Dropout(),
+            # nn.Linear(64, 32),
+            # nn.PReLU(),
+            # nn.Dropout(),
+            nn.Linear(input_size, 128),
             nn.PReLU(),
             nn.Dropout(),
-            nn.Linear(64, 64),
+            nn.Linear(128, 64),
             nn.PReLU(),
             nn.Dropout(),
             nn.Linear(64, 32),
