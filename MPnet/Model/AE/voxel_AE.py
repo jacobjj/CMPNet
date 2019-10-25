@@ -58,10 +58,10 @@ class Encoder(nn.Module):
             nn.Linear(first_fc_in_features + state_size * 2, 256),
             nn.PReLU(),
             nn.Dropout(),
-            nn.Linear(256, 128),
+            nn.Linear(256, 256),
             nn.PReLU(),
             nn.Dropout(),
-            nn.Linear(128, output_size),
+            nn.Linear(256, output_size),
         )
         # self.head.apply(weights_init)
 
