@@ -31,13 +31,13 @@ def train(args):
 
     trainNetwork = MPnetTrain(
         load_dataset=load_dataset_voxel,
-        n_epochs=1000,
+        n_epochs=5000,
         batchSize=256,
         opt=torch.optim.Adagrad,
         # learning_rate=1e-5,
         **network_parameters,
     )
-    # trainNetwork.set_model_train_epoch(9999)
+    # trainNetwork.set_model_train_epoch(999)
 
     trainNetwork.train(numEnvsTrain=90000,
                        numEnvsTest=10000,

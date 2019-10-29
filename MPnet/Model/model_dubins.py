@@ -34,16 +34,19 @@ class DubinsPathGenerator(nn.Module):
             nn.Linear(128, 128),
             nn.PReLU(),
             nn.Dropout(),
+            nn.Linear(128, 128),
+            nn.PReLU(),
+            nn.Dropout(),
             nn.Linear(128, 64),
             nn.PReLU(),
             nn.Dropout(),
-            nn.Linear(64, 32),
+            nn.Linear(64, 64),
             nn.PReLU(),
             nn.Dropout(),
         )
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
-        self.final = nn.Linear(32, 9)
+        self.final = nn.Linear(64, 9)
 
     def LeftTurn(self, x, beta):
         return torch.Tensor([
