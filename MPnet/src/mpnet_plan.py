@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 from tools.utils import word2primitive
 
 
-
 def primitive2word(primitive_length, primitive_type):
     s = np.zeros((3, 3))
     primitive2word = np.array([
@@ -21,6 +20,19 @@ def primitive2word(primitive_length, primitive_type):
     for i, length in enumerate(primitive_length):
         s[i, primitive2word[primitive_type][i]] = length
     return s
+
+
+def CenterRobot(costmap, pixel_ind):
+    costmap_data = costmap.get_data()
+    costmap_dim = costmap_data.shape
+    full_obs = np.ones((costmap_dim[0] * 2, costmap_dim[1] * 2))
+    x_0, y_0 = costmap_dim[1] - pixel_ind[1], costmap_dim[0] - pixel_ind[0]
+    full_obs[x_0:x_0 + costmap_dim[1], y_0:y_0 +
+             costmap_dim[0]] = costmap_data / 254
+    full_obs = full_obs[::3, ::3]
+    full_obs = torch.Tensor(full_obs).unsqueeze(0)
+    return full_obs
+
 
 class MPNetPlan(MPnetBase):
     def __init__(self, modelFile, steerTo, stepSz=0.01, **kwargs):
@@ -74,18 +86,17 @@ class MPNetPlan(MPnetBase):
         traj = np.array(traj)
         ax.plot(traj[:, 0], traj[:, 1])
 
-    def getPath(self, IsInCollision, start, goal, obs, pointCloud=None):
+    def getPath(self, IsInCollision, start, goal, costmap, pointCloud=None):
         """
         Generate a plan using the MPnet
         : param IsInCollision :
         : param start numpy.array: start position of the robot
         : param goal numpy.array : goal position of the robot
-        : param obs numpy.array: obstacle representation of the robot
+        : param costmap : A costmap object from bc_gym_planning_env
         : return path list: key points to generate a path
         """
-        obs = torch.from_numpy(obs)
-        start = torch.tensor(start,dtype=torch.float)
-        goal = torch.tensor(goal,dtype=torch.float)
+        start = torch.tensor(start, dtype=torch.float)
+        goal = torch.tensor(goal, dtype=torch.float)
         path = [start, goal]
         fig, (axMain, axMini) = plt.subplots(1, 2)
         figParam = {'axis': axMini, 'pointCloud': pointCloud}
@@ -119,7 +130,7 @@ class MPNetPlan(MPnetBase):
             if not steer:
                 miniPath, _ = self.neuralPlan(startNode,
                                               goalNode,
-                                              obs,
+                                              costmap,
                                               IsInCollision,
                                               maxPoints=50,
                                               figParam=figParam)
@@ -167,7 +178,7 @@ class MPNetPlan(MPnetBase):
     def neuralPlan(self,
                    start,
                    goal,
-                   obs,
+                   costmap,
                    IsInCollision,
                    maxPoints,
                    figParam=None):
@@ -179,18 +190,28 @@ class MPNetPlan(MPnetBase):
         noPath = [start.clone(), goal.clone()]
         pA = [start.clone()]
         tree = 0
-
+        center_obs = CenterRobot(costmap,
+                                 costmap.world_to_pixel(start[:2].numpy()))
         with torch.no_grad():
             for _ in range(maxPoints):
                 network_input = np.concatenate((start, goal))
                 network_input = self.formatInput(network_input)
-                tobs, tInput = self.format_input(obs, network_input)
+                tobs, tInput = self.format_input(center_obs.unsqueeze(0), network_input)
                 word = self.mpNet(tInput, tobs).squeeze().data.cpu()
-                start = word2primitive(word, start, 0.6)
+                temp = word2primitive(word, start, 0.6)
+                pixel_ind = costmap.world_to_pixel(temp[:2].numpy())
+                if pixel_ind[0]<0 or pixel_ind[1]<0:
+                    continue
+                if pixel_ind[0]>183 or pixel_ind[1]>183:
+                    continue
+                start = temp
                 pA.append(start.clone())
 
+                center_obs = CenterRobot(
+                    costmap, costmap.world_to_pixel(start[:2].numpy()))
+
             target_reached = self.steerTo(start.squeeze(), goal.squeeze(),
-                                      IsInCollision)
+                                          IsInCollision)
         if figParam is not None:
             ax = figParam['axis']
             pointCloud = figParam['pointCloud']

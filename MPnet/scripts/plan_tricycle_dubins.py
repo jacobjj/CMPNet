@@ -12,9 +12,9 @@ from BC.scripts.point_cloud import generate_point_cloud
 import dubins
 
 
-
 def steerTo_env(start, goal, IsInCollision):
     steerTo(start, goal, IsInCollision)
+
 
 
 import matplotlib.pyplot as plt
@@ -37,29 +37,31 @@ if __name__ == "__main__":
     network_param = {
         'normalize': normalize,
         'denormalize': unnormalize,
-        'encoderInputDim': [1, 61, 61],
+        'encoderInputDim': [1, 122, 122],
         'encoderOutputDim': 128,
         'worldSize': [2.75, 2.75, np.pi],
         'AE': voxelNet,
         'MLP': model.DubinsPathGenerator,
-        'modelPath': 'data/MPnet_tricycle/dubins_fc/Adagrad_lrminus2/'
+        'modelPath': 'data/MPnet_tricycle/dubins_fc_centeredObs/Adam_lrminus3/'
     }
 
     MPNetPlan_obj = MPNetPlan(
-        modelFile='data/MPnet_tricycle/dubins_fc/Adagrad_lrminus2/mpnet_epoch_999.pkl',
+        modelFile=
+        'data/MPnet_tricycle/dubins_fc_centeredObs/Adam_lrminus3/mpnet_epoch_999.pkl',
         steerTo=steerTo,
         **network_param,
     )
     start_node = env._env._state.pose
     goal_node = env._env._state.original_path[-1]
-    obs = np.array(generateVoxelData(env), dtype=np.float32).reshape(
-        (1, 1, 61, 61))
+    # Shifted costmap
+    observation = env.reset()
+    costmap = observation.costmap
     pointcloud = generate_point_cloud(s)
     path = MPNetPlan_obj.getPath(
         IsInCollision_env,
         start_node,
         goal_node,
-        obs,
+        costmap,
         pointcloud,
     )
 
@@ -68,8 +70,9 @@ if __name__ == "__main__":
         plt.scatter(pointcloud[:, 0], pointcloud[:, 1])
         for p in path:
             plt.scatter(p[0], p[1], marker='x', color='r')
-        for i,_ in enumerate(path[:-1]):
-            p = dubins.shortest_path(tuple(path[i].numpy()), tuple(path[i + 1].numpy()), 0.6)
+        for i, _ in enumerate(path[:-1]):
+            p = dubins.shortest_path(tuple(path[i].numpy()),
+                                     tuple(path[i + 1].numpy()), 0.6)
             config, _ = p.sample_many(0.1)
             config = np.array(config)
             plt.plot(config[:, 0], config[:, 1])
