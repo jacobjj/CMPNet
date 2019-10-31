@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import torchvision.models as models
+
 from torch.autograd import Variable
 from torch.nn.utils import clip_grad_norm_, clip_grad_value_
 
