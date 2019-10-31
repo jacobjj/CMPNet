@@ -13,6 +13,9 @@ import dubins
 
 # from bc_gym_planning_env.utilities.map_drawing_utils import get_physical_coords_from_drawing
 
+from MPnet.tools.data_loader_dubins import DubinsIterDataset
+from torch.utils.data import DataLoader
+
 
 def get_files(folder_loc):
     files = []
@@ -57,12 +60,12 @@ def primitive2word(primitive_length, primitive_type, d):
     ])
     for i, length in enumerate(primitive_length):
         row = primitive_type
-        if i!=2:
-            s[i, primitive2word_dict[row][i]] = normalize_angle( length / scale[
-            primitive2word_dict[row][i]])
+        if i != 2:
+            s[i, primitive2word_dict[row][i]] = normalize_angle(
+                length / scale[primitive2word_dict[row][i]])
         else:
             s[i, primitive2word_dict[row][i]] = length / scale[
-            primitive2word_dict[row][i]]
+                primitive2word_dict[row][i]]
     return s
 
 
@@ -114,6 +117,61 @@ def load_dataset_voxel(N=10000, NP=1, folder_loc=None):
                 break
         if done:
             break
+    if not done:
+        print("Not enough samples")
+        return obs[:i, ...], inputs[:i, ...], targets[:i, ...]
+
+    return obs, inputs, targets
+
+
+def load_dataset_torch(N=10000, NP=1, folder_loc=None):
+    """
+    A function to load dataset for the BC environment in the same format as the other data loader functions, with the help of torch data loaders
+    : param N : Number of environments to load
+    : param NP : Number of paths per environment
+    : return array(N*NP,28000),array(N*NP,3),array(N*NP,3): point-cloud,inputs and target nodes
+    """
+    # TODO: Count number of possible samples that can be generated
+    numSamples = N * NP
+
+    inputs = torch.zeros((numSamples, 6))
+    targets = torch.zeros((numSamples, 9))
+
+    obs = np.zeros((numSamples, 1, 122, 122))
+    i = 0
+    done = False
+    # Load data
+    trajFolder = osp.join(folder_loc, 'traj')
+    seeds = []
+
+    for entry in os.listdir(trajFolder):
+        if '.npy' in entry:
+            s = int(re.findall(r'\d+', entry)[0])
+            seeds.append(s)
+
+    DataSet = DubinsIterDataset(trajFolder, seeds)
+    Data = DataLoader(DataSet, num_workers=5)
+
+    if not seeds:
+        raise ValueError("{} - Not a valid folder".format(trajFolder))
+    # Load point cloud, points and target information
+    count = 0
+    for data in Data:
+        if len(data['obs'])==0:
+            count +=1
+            continue
+
+        numSubSamples = data['obs'].shape[1]
+
+        stop_iter = min(i+numSubSamples, numSamples)
+        obs[i:stop_iter, ...] = data['obs'].squeeze(0)[:stop_iter-i,...]
+        inputs[i:stop_iter, ...] = data['inputs'].squeeze(0)[:stop_iter-i,...]
+        targets[i:stop_iter, ...] = data['targets'].squeeze(0)[:stop_iter-i,...]
+        i = stop_iter
+        if i == numSamples:
+            done = True
+            break
+    print(count)
     if not done:
         print("Not enough samples")
         return obs[:i, ...], inputs[:i, ...], targets[:i, ...]
