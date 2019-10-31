@@ -10,7 +10,7 @@ import re
 import torch
 import csv
 import datetime
-import torchvision
+# import torchvision
 import os.path as osp
 
 get_numpy = lambda x: x.data.cpu().numpy()
