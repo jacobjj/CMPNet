@@ -108,8 +108,15 @@ class MPnetBase():
         """
         Formats the input data that needed to be fed into the network
         """
-        bi = torch.FloatTensor(inputs)
-        bobs = torch.FloatTensor(obs)
+        if isinstance(inputs, np.ndarray):
+            bi = torch.FloatTensor(inputs)
+        else:
+            bi = inputs.float()
+        if isinstance(obs, np.ndarray):
+            bobs = torch.FloatTensor(obs)
+        else:
+            bobs = obs.float()
+
         # Normalize observations
         # normObsVoxel = torchvision.transforms.Normalize([0.5], [1])
         # for i in range(bobs.shape[0]):
@@ -125,6 +132,9 @@ class MPnetBase():
         # Normalize angles
         for i in [0,1,3,4,6,7]:
             targets[:,i] = targets[:,i]/np.pi
-        bt = torch.FloatTensor(targets)
+        if isinstance(targets, np.ndarray):
+            bt = torch.FloatTensor(targets)
+        else:
+            bt = targets.float()
         bt = to_var(bt)
         return bobs, bi, bt
