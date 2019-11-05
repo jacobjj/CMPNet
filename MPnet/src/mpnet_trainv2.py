@@ -8,6 +8,9 @@ from tqdm import tqdm
 import pandas as pd
 from torch.nn.utils import clip_grad_value_
 
+from torch.utils.data import DataLoader
+from MPnet.tools.data_loader_dubins import DubinsDataset
+
 get_numpy = lambda x: x.data.cpu().numpy()
 
 
@@ -76,16 +79,24 @@ class MPnetTrain(MPnetBase):
         A method to train the network with given data
         """
         print('Loading data...')
-        obs, inputs, targets = self.load_dataset(N=numEnvsTrain,
-                                                 NP=numPaths,
-                                                 folder_loc=trainDataPath)
-        trainObs, trainInput, trainTarget = self.format_data(
-            obs, inputs, targets)
+        # obs, inputs, targets = self.load_dataset(N=numEnvsTrain,
+        #                                          NP=numPaths,
+        #                                          folder_loc=trainDataPath)
+        # trainObs, trainInput, trainTarget = self.format_data(
+        #     obs, inputs, targets)
 
-        obs_test, inputs_test, targets_test = self.load_dataset(
-            N=numEnvsTest, NP=1, folder_loc=testDataPath)
+        # obs_test, inputs_test, targets_test = self.load_dataset(
+        #     N=numEnvsTest, NP=1, folder_loc=testDataPath)
+        # testObs, testInput, testTarget = self.format_data(
+        #     obs_test, inputs_test, targets_test)
+
+        train_ds = DubinsDataset(trainDataPath, numEnvsTrain*numPaths)
+        train_dl = DataLoader(train_ds, shuffle=True, num_workers = 5, batch_size = self.batchSize)
+
+        test_ds = DubinsDataset(testDataPath, numEnvsTest*numPaths)
+        testObs, testInput, testTarget = test_ds[:10000]
         testObs, testInput, testTarget = self.format_data(
-            obs_test, inputs_test, targets_test)
+            testObs, testInput, testTarget)
 
         # Setting the learning rate scheduler
         # scheduler = step_decay_schedule(initial_lr=3e-4,
@@ -109,27 +120,24 @@ class MPnetTrain(MPnetBase):
             # newLR = scheduler(epoch)
             # if epoch % 2 == 0:
             #     self.mpNet.set_opt(torch.optim.SGD, 10**lr_range[epoch // 2])
-            np.random.shuffle(indices)
+            # np.random.shuffle(indices)
             grad_norm = []
             self.mpNet.train()
-            for i in range((numEnvsTrain * numPaths) // self.batchSize):
-                sample_index = indices[i * self.batchSize:(i + 1) *
-                                       self.batchSize]
-                bobs, bi = trainObs[sample_index,
-                                    ...], trainInput[sample_index, :]
-                bt = trainTarget[sample_index, :]
+            # for i in range((numEnvsTrain * numPaths) // self.batchSize):
+            for batch in train_dl:
+                bobs, bi, bt = batch
+                bobs, bi, bt = self.format_data(bobs, bi, bt)
                 # Run gradient descent
                 self.mpNet.fit(bobs, bi, bt)
                 # grad_norm.append(self.mpNet(bobs, bi, bt))
 
             with torch.no_grad():
-                self.mpNet.eval()
-                network_output = self.mpNet(trainInput[sample_index, ...],
-                                            trainObs[sample_index, ...])
+                # self.mpNet.eval()
+                network_output = self.mpNet(bi, bobs)
                 # Train loss
                 train_loss_i = self.mpNet.loss_with_regularize(
                     network_output,
-                    trainTarget[sample_index, ...]
+                    bt
                 )
                 train_loss_i = get_numpy(train_loss_i)
 
