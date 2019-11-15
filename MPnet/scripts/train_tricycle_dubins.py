@@ -33,8 +33,8 @@ def train(args):
         load_dataset=load_dataset_torch,
         n_epochs=1000,
         batchSize=128,
-        opt=torch.optim.Adagrad,
-        # learning_rate=1e-5,
+        opt=torch.optim.Adam,
+        learning_rate=3e-4,
         **network_parameters,
     )
     # trainNetwork.set_model_train_epoch(999)
