@@ -26,7 +26,7 @@ def RightTurn(x, alpha):
     ])
 
 
-def StraightTrun(x, gamma):
+def StraightTurn(x, gamma):
     return torch.Tensor([
         x[0] + gamma * torch.cos(x[2]),
         x[1] + gamma * torch.sin(x[2]),
@@ -49,19 +49,19 @@ def word2primitive(word, start, d):
     RLR = 4
     LRL = 5
     """
-    F = [RightTurn, LeftTurn, StraightTrun]
+    F = [RightTurn, LeftTurn, StraightTurn]
     temp_word = torch.abs(word.clone())
-    for i in [0,1,3,4,6,7]:
+    for i in [0, 1, 3, 4, 6, 7]:
         temp_word[i] = temp_word[i] * np.pi * d
         word[i] = word[i] * np.pi
     word = word.reshape((3, 3))
-    temp_word = temp_word.reshape((3,3))
+    temp_word = temp_word.reshape((3, 3))
     x_i = torch.Tensor([0, 0, start[2]])
     for i in range(3):
         _, index = torch.max(temp_word[i, :], dim=0)
-        v = torch.max(word[i, :])
+        v = word[i, index]
         if index == 2:
-            v = v/d
+            v = v / d
         x_i = F[index](x_i, v)
     start[0] += x_i[0] * d
     start[1] += x_i[1] * d
