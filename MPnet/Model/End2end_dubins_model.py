@@ -50,7 +50,7 @@ class End2EndMPNet(nn.Module):
         self.encoder = CAE.Encoder(AE_output_size, state_size, AE_input_size)
         self.mlp = MLP(mlp_input_size)
         self.mse = nn.MSELoss()
-        self.set_opt(torch.optim.Adagrad, lr=1e-4)
+        self.set_opt(torch.optim.Adam, lr=3e-4)
         self.lambda1 = 0.1
 
         self.num_seen = np.zeros(n_tasks).astype(int)
@@ -147,11 +147,11 @@ class End2EndMPNet(nn.Module):
             network_output = self.__call__(x, obs)
             final_param = torch.cat(
                 [p.view(-1) for p in self.mlp.final.parameters()])
-            l1_loss = self.lambda1 * torch.norm(final_param, 1)
+            # l1_loss = self.lambda1 * torch.norm(final_param, 1)
             loss = self.loss_with_regularize(
                 network_output,
                 y,
-            ) + l1_loss
+            ) # + l1_loss
             loss.backward()
             self.opt.step()
             self.zero_grad()
