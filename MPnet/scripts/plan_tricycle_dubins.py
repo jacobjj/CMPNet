@@ -42,12 +42,12 @@ if __name__ == "__main__":
         'worldSize': [2.75, 2.75, np.pi],
         'AE': voxelNet,
         'MLP': model.DubinsPathGenerator,
-        'modelPath': 'data/MPnet_tricycle/dubins_fc_centeredObs/Adam_lrminus3/'
+        'modelPath': 'data/MPnet_tricycle/Adam_lr_3minus4_centeredObs/'
     }
 
     MPNetPlan_obj = MPNetPlan(
         modelFile=
-        'data/MPnet_tricycle/dubins_fc_centeredObs/Adam_lrminus3/mpnet_epoch_999.pkl',
+        'data/MPnet_tricycle/Adam_lr_3minus4_centeredObs/mpnet_epoch_299.pkl',
         steerTo=steerTo,
         **network_param,
     )
