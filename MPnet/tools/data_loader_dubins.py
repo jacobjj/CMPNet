@@ -32,7 +32,7 @@ def primitive2word(primitive_length, primitive_type, d):
     ])
     for i, length in enumerate(primitive_length):
         row = primitive_type
-        if i != 2:
+        if primitive2word_dict[row][i] != 2:
             s[i, primitive2word_dict[row][i]] = normalize_angle(
                 length / scale[primitive2word_dict[row][i]])
         else:
