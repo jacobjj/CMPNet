@@ -105,7 +105,7 @@ class MPNetPlan(MPnetBase):
             ax.set_ylim([-5, 5])
         self.plotMainPath(axMain, path, pointCloud)
         # Number of re-planning steps taken.
-        MAX_NEURAL_REPLAN = 6
+        MAX_NEURAL_REPLAN = 10
         step_sz = 0.01
         for t in range(MAX_NEURAL_REPLAN):
             # adaptive step size on replanning attempts
