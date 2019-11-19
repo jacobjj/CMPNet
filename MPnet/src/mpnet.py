@@ -71,7 +71,7 @@ class MPnetBase():
             AE_input_size=encoderInputDim,
             AE_output_size=encoderOutputDim,
             state_size=self.worldInputDim,
-            mlp_input_size= encoderOutputDim,
+            mlp_input_size=encoderOutputDim,
             n_tasks=n_tasks,
             grad_step=grad_steps,
             CAE=AE,
@@ -129,12 +129,11 @@ class MPnetBase():
         Formats the data to be fed into the neural network
         """
         bobs, bi = self.format_input(obs, inputs)
-        # Normalize angles
-        for i in [0,1,3,4,6,7]:
-            targets[:,i] = targets[:,i]/np.pi
+        # Format targets
         if isinstance(targets, np.ndarray):
             bt = torch.FloatTensor(targets)
         else:
             bt = targets.float()
+        bt = self.normalize(bt, self.worldSize)
         bt = to_var(bt)
         return bobs, bi, bt

@@ -94,7 +94,7 @@ class MPnetTrain(MPnetBase):
         train_dl = DataLoader(train_ds, shuffle=True, num_workers = 5, batch_size = self.batchSize)
 
         test_ds = DubinsDataset(testDataPath, numEnvsTest*numPaths)
-        testObs, testInput, testTarget = test_ds[:10000]
+        testObs, testInput, testTarget = test_ds[:int(numEnvsTest*numPaths/2)]
         testObs, testInput, testTarget = self.format_data(
             testObs, testInput, testTarget)
 
@@ -135,18 +135,18 @@ class MPnetTrain(MPnetBase):
                 # self.mpNet.eval()
                 network_output = self.mpNet(bi, bobs)
                 # Train loss
-                train_loss_i = self.mpNet.loss_with_regularize(
+                train_loss_i = self.mpNet.loss(
                     network_output,
                     bt
-                )
+                ).sum(dim=1).mean()
                 train_loss_i = get_numpy(train_loss_i)
 
                 # Test loss
                 network_output = self.mpNet(testInput, testObs)
-                test_loss_i = self.mpNet.loss_with_regularize(
+                test_loss_i = self.mpNet.loss(
                     network_output,
                     testTarget
-                    )
+                    ).sum(dim=1).mean()
                 test_loss_i = get_numpy(test_loss_i)
 
                 if train_loss_i > 10:

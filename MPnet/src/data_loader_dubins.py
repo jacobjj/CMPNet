@@ -80,7 +80,7 @@ def load_dataset_voxel(N=10000, NP=1, folder_loc=None):
     numSamples = N * NP
 
     inputs = np.zeros((numSamples, 6))
-    targets = np.zeros((numSamples, 9))
+    targets = np.zeros((numSamples, 3))
 
     obs = np.zeros((numSamples, 1, 61, 61))
     i = 0
@@ -135,7 +135,7 @@ def load_dataset_torch(N=10000, NP=1, folder_loc=None):
     numSamples = N * NP
 
     inputs = torch.zeros((numSamples, 6))
-    targets = torch.zeros((numSamples, 9))
+    targets = torch.zeros((numSamples, 3))
 
     obs = np.zeros((numSamples, 1, 122, 122))
     i = 0

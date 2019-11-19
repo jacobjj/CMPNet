@@ -46,7 +46,7 @@ class DubinsDataset(torch.utils.data.Dataset):
         self.folder_loc = folder_loc
         self.numSamples = numSamples
         self.inputs = np.zeros((numSamples, 6))
-        self.targets = np.zeros((numSamples, 9))
+        self.targets = np.zeros((numSamples, 3))
         self.obs = np.zeros((numSamples, 1, 122, 122))
         i = 0
         done = False
@@ -131,7 +131,7 @@ class DubinsIterDataset(torch.utils.data.IterableDataset):
         width = int(costmap_dim[1] / 3) * 2
         obs = np.ones((samples, 1, height, width))
         inputs = np.zeros((samples, 6))
-        targets = np.zeros((samples, 9))
+        targets = np.zeros((samples, 3))
         for j, _ in enumerate(traj[:-1]):
             x_0, y_0 = costmap_dim[1] - pixel_ind[j][1], costmap_dim[
                 0] - pixel_ind[j][0]
@@ -143,12 +143,7 @@ class DubinsIterDataset(torch.utils.data.IterableDataset):
                 import pdb; pdb.set_trace()
             obs[j, 0, :, :] = full_obs[::3, ::3]
             inputs[j, :] = np.concatenate((traj[j], traj[-1]))
-            path = dubins.shortest_path(tuple(traj[j]), tuple(traj[j + 1]),
-                                        0.6)
-            primitive_length = [path.segment_length(i) for i in range(3)]
-            primitive_type = path.path_type()
-            s = primitive2word(primitive_length, primitive_type, d=0.6)
-            targets[j, :] = s.ravel()
+            targets[j, :] = traj[j + 1]
         return {
             'obs': np.array(obs, dtype=np.float32),
             'inputs': np.array(inputs, dtype=np.float32),

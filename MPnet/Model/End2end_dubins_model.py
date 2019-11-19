@@ -48,7 +48,7 @@ class End2EndMPNet(nn.Module):
         """
         super(End2EndMPNet, self).__init__()
         self.encoder = CAE.Encoder(AE_output_size, state_size, AE_input_size)
-        self.mlp = MLP(mlp_input_size)
+        self.mlp = MLP(mlp_input_size, 3)
         self.mse = nn.MSELoss()
         self.set_opt(torch.optim.Adam, lr=3e-4)
         self.lambda1 = 0.1
@@ -114,9 +114,9 @@ class End2EndMPNet(nn.Module):
         # be compatible with other methods
         loss = (pred-truth)
         try:
-            loss[:, 0] = normalize_cost(loss[:, 0].clone())**2
-            loss[:, 1] = normalize_cost(loss[:, 1].clone())**2
-            loss[:, 2] = loss[:, 2].clone()**2
+            loss[:, 0] = loss[:, 0].clone()**2
+            loss[:, 1] = loss[:, 1].clone()**2
+            loss[:, 2] = normalize_cost(loss[:, 2].clone()**2)
         except IndexError:
             import pdb;pdb.set_trace()
         return loss
@@ -145,16 +145,12 @@ class End2EndMPNet(nn.Module):
         """
         with torch.autograd.set_detect_anomaly(True):
             network_output = self.__call__(x, obs)
-            final_param = torch.cat(
-                [p.view(-1) for p in self.mlp.final.parameters()])
+            self.zero_grad()
             # l1_loss = self.lambda1 * torch.norm(final_param, 1)
-            loss = self.loss_with_regularize(
-                network_output,
-                y,
-            ) # + l1_loss
+            loss = self.loss(network_output, y).sum(dim=1).mean()
             loss.backward()
             self.opt.step()
-            self.zero_grad()
+
 
     def fit_distribution(self, obs, x, y):
         """

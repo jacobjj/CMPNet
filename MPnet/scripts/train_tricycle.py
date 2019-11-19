@@ -20,8 +20,8 @@ def train(args):
     network_parameters = {
         'normalize': normalize,
         'denormalize': denormalize,
-        'encoderInputDim': [1, 61, 61],
-        'encoderOutputDim': 64,
+        'encoderInputDim': [1, 122, 122],
+        'encoderOutputDim': 128,
         'worldSize': [2.75, 2.75, np.pi],
         'AE': voxelNet,
         'MLP': MLP,
@@ -30,10 +30,10 @@ def train(args):
 
     trainNetwork = MPnetTrain(
         load_dataset=load_dataset_voxel,
-        n_epochs=1000,
+        n_epochs=100,
         batchSize=64,
-        opt=torch.optim.SGD,
-        # learning_rate=1e-5,
+        opt=torch.optim.Adam,
+        learning_rate=3e-4,
         **network_parameters,
     )
     # trainNetwork.set_model_train_epoch(9999)

@@ -197,8 +197,10 @@ class MPNetPlan(MPnetBase):
                 network_input = np.concatenate((start, goal))
                 network_input = self.formatInput(network_input)
                 tobs, tInput = self.format_input(center_obs.unsqueeze(0), network_input)
-                word = self.mpNet(tInput, tobs).squeeze().data.cpu()
-                temp = word2primitive(word, start, 0.6)
+                # word = self.mpNet(tInput, tobs).squeeze().data.cpu()
+                # temp = word2primitive(word, start, 0.6)
+                temp = self.mpNet(tInput, tobs).squeeze().data.cpu()
+                temp = self.denormalize(temp, self.worldSize)
                 pixel_ind = costmap.world_to_pixel(temp[:2].numpy())
                 if pixel_ind[0]<0 or pixel_ind[1]<0:
                     continue

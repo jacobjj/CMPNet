@@ -52,10 +52,8 @@ class MLP(nn.Module):
             nn.Dropout(),
             nn.Linear(128, 64),
             nn.PReLU(),
-            nn.Dropout(),
-            nn.Linear(64, 32),
-            nn.PReLU(),
-            nn.Linear(32, output_size),
+            nn.Linear(64, output_size),
+            nn.Tanh(),
         )
         # self.fc.apply(weights_init)
 
