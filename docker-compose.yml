@@ -13,6 +13,7 @@ services:
     volumes:
       - "/tmp/.X11-unix:/tmp/.X11-unix:rw"
       - "${HOME}/CMPNet/MPnet:/root/code/MPnet"
+      - "${HOME}/CMPNet/test_generator:/root/code/test_generator"
       - "/tmp/data:/root/code/data"
       - "${HOME}/RLplayground/BC:/root/code/BC"
     command: bash
