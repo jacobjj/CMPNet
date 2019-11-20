@@ -55,7 +55,7 @@ class Encoder(nn.Module):
         for n in x.size()[1:]:
             first_fc_in_features *= n
         self.head = nn.Sequential(
-            nn.Linear(first_fc_in_features + state_size * 2, 256),
+            nn.Linear(first_fc_in_features + state_size + 1, 256),
             nn.PReLU(),
             nn.Dropout(),
             nn.Linear(256, 256),
@@ -79,6 +79,15 @@ class Encoder(nn.Module):
     def forward(self, obs, state):
         obs = self.encoder(obs)
         x = obs.view(obs.size(0), -1)
-        x = torch.cat((x, state), dim=1)
+        relative_target = state[:, 3:5] - state[:, :2]
+        input_state = torch.cat(
+            (
+                relative_target,
+                state[:, 5].reshape(-1, 1),
+                state[:, 2].reshape(-1, 1)
+            ),
+            dim=1,
+        )
+        x = torch.cat((x, input_state), dim=1)
         x = self.head(x)
         return x
