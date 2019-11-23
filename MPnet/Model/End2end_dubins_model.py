@@ -116,7 +116,7 @@ class End2EndMPNet(nn.Module):
         try:
             loss[:, 0] = loss[:, 0].clone()**2
             loss[:, 1] = loss[:, 1].clone()**2
-            loss[:, 2] = normalize_cost(loss[:, 2].clone()**2)
+            loss[:, 2] = normalize_cost(loss[:, 2].clone())**2
         except IndexError:
             import pdb;pdb.set_trace()
         return loss
@@ -147,9 +147,12 @@ class End2EndMPNet(nn.Module):
             network_output = self.__call__(x, obs)
             self.zero_grad()
             # l1_loss = self.lambda1 * torch.norm(final_param, 1)
-            loss = self.loss(network_output, y).sum(dim=1).mean()
+            loss = self.loss(network_output, y)
+            # print(loss[:5,:].data.cpu().numpy())
+            loss = loss.sum(dim=1).mean()
             loss.backward()
             self.opt.step()
+        return loss.data.cpu().numpy()
 
 
     def fit_distribution(self, obs, x, y):
