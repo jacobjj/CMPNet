@@ -1,5 +1,5 @@
 from Model.End2end_dubins_model import End2EndMPNet
-from src.utility import load_net_state, load_opt_state, save_state, to_var
+from src.utility import load_net_state, load_opt_state, save_state, to_var, load_seed
 
 import src.data_loader_dubins
 import numpy as np
@@ -96,6 +96,12 @@ class MPnetBase():
         : param modelPath : location of the model parameters of the model
         """
         load_opt_state(self.mpNet, modelFile)
+        load_net_state(self.mpNet, modelFile)
+        torch_seed, np_seed, py_seed = load_seed(modelFile)
+        torch.manual_seed(torch_seed)
+        np.random.seed(np_seed)
+        random.seed(py_seed)
+
 
     def save_network_state(self, fname):
         """
