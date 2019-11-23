@@ -132,15 +132,16 @@ class DubinsIterDataset(torch.utils.data.IterableDataset):
         obs = np.ones((samples, 1, height, width))
         inputs = np.zeros((samples, 6))
         targets = np.zeros((samples, 3))
+        for t in traj:
+            t[2] = normalize_angle(t[2])
+
         for j, _ in enumerate(traj[:-1]):
-            x_0, y_0 = costmap_dim[1] - pixel_ind[j][1], costmap_dim[
-                0] - pixel_ind[j][0]
+            pixel_ind = costmap.world_to_pixel(traj[j,:2])
+            x_0, y_0 = costmap_dim[1] - pixel_ind[1], costmap_dim[
+                0] - pixel_ind[0]
             full_obs = np.ones((costmap_dim[0] * 2, costmap_dim[1] * 2))
-            try:
-                full_obs[x_0:x_0 + costmap_dim[1], y_0:y_0 +
+            full_obs[x_0:x_0 + costmap_dim[1], y_0:y_0 +
                      costmap_dim[0]] = costmap_data / 254
-            except:
-                import pdb; pdb.set_trace()
             obs[j, 0, :, :] = full_obs[::3, ::3]
             inputs[j, :] = np.concatenate((traj[j], traj[-1]))
             targets[j, :] = traj[j + 1]
