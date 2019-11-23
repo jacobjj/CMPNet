@@ -11,6 +11,18 @@ from torch.nn.utils import clip_grad_value_
 from torch.utils.data import DataLoader
 from MPnet.tools.data_loader_dubins import DubinsDataset
 
+from bc_gym_planning_env.envs.mini_env import RandomMiniEnv
+def CenterRobot(costmap, pixel_ind):
+    costmap_data = costmap.get_data()
+    costmap_dim = costmap_data.shape
+    full_obs = np.ones((costmap_dim[0] * 2, costmap_dim[1] * 2))
+    x_0, y_0 = costmap_dim[1] - pixel_ind[1], costmap_dim[0] - pixel_ind[0]
+    full_obs[x_0:x_0 + costmap_dim[1], y_0:y_0 +
+             costmap_dim[0]] = costmap_data / 254
+    full_obs = full_obs[::3, ::3]
+    full_obs = torch.Tensor(full_obs).unsqueeze(0)
+    return full_obs
+
 get_numpy = lambda x: x.data.cpu().numpy()
 
 
@@ -91,7 +103,7 @@ class MPnetTrain(MPnetBase):
         #     obs_test, inputs_test, targets_test)
 
         train_ds = DubinsDataset(trainDataPath, numEnvsTrain*numPaths)
-        train_dl = DataLoader(train_ds, shuffle=True, num_workers = 5, batch_size = self.batchSize)
+        train_dl = DataLoader(train_ds, shuffle=True, num_workers = 5, batch_size = self.batchSize, drop_last=True)
 
         test_ds = DubinsDataset(testDataPath, numEnvsTest*numPaths)
         testObs, testInput, testTarget = test_ds[:int(numEnvsTest*numPaths/2)]
@@ -124,24 +136,25 @@ class MPnetTrain(MPnetBase):
             grad_norm = []
             self.mpNet.train()
             # for i in range((numEnvsTrain * numPaths) // self.batchSize):
+            train_loss_i = 0
             for batch in train_dl:
                 bobs, bi, bt = batch
                 bobs, bi, bt = self.format_data(bobs, bi, bt)
                 # Run gradient descent
-                self.mpNet.fit(bobs, bi, bt)
+                train_loss_i += self.mpNet.fit(bobs, bi, bt)
                 # grad_norm.append(self.mpNet(bobs, bi, bt))
-
+            train_loss_i /=len(train_dl)
             with torch.no_grad():
                 # self.mpNet.eval()
-                network_output = self.mpNet(bi, bobs)
-                # Train loss
-                train_loss_i = self.mpNet.loss(
-                    network_output,
-                    bt
-                ).sum(dim=1).mean()
-                train_loss_i = get_numpy(train_loss_i)
+                # network_output = self.mpNet(bi, bobs)
+                # # Train loss
+                # train_loss_i = self.mpNet.loss(
+                #     network_output,
+                #     bt
+                # ).sum(dim=1).mean()
+                # train_loss_i = get_numpy(train_loss_i)
 
-                # Test loss
+                # test loss
                 network_output = self.mpNet(testInput, testObs)
                 test_loss_i = self.mpNet.loss(
                     network_output,
@@ -149,8 +162,6 @@ class MPnetTrain(MPnetBase):
                     ).sum(dim=1).mean()
                 test_loss_i = get_numpy(test_loss_i)
 
-                if train_loss_i > 10:
-                    import pdb;pdb.set_trace()
 
             # print('Epoch {} - mean grad norm {}'.format(epoch, np.mean(grad_norm)))
             print('Epoch {} - train loss: {}'.format(epoch, train_loss_i))
@@ -159,7 +170,7 @@ class MPnetTrain(MPnetBase):
             self.train_loss.append(train_loss_i)
             self.test_loss.append(test_loss_i)
             # Save the models
-            if (epoch + 1) % 50 == 0:
+            if (epoch + 1) % 10 == 0:
                 model_file = 'mpnet_epoch_%d.pkl' % (epoch)
                 self.save_network_state(osp.join(self.modelPath, model_file))
 
@@ -180,3 +191,24 @@ class MPnetTrain(MPnetBase):
                 ]
                 for row in row_data:
                     writer.writerow(row)
+
+        # Do a test sampling using the sample code
+        # s = 304299
+        # env = RandomMiniEnv(draw_new_turn_on_reset=False,
+        #                 seed=s,
+        #                 goal_spat_dist=0.05)
+        # observation = env.reset()
+        # costmap = observation.costmap
+        # start = observation.pose
+        # start = torch.tensor(start).float().reshape(1,-1)
+        # goal = env._env._state.original_path[-1]
+        # goal = torch.tensor(goal).float().reshape(1,-1)
+
+        # center_obs = CenterRobot(costmap, costmap.world_to_pixel(start[0,:2].numpy()))
+        # network_input = torch.cat((start,goal), dim=1)
+        # tobs, tInput = self.format_input(center_obs.unsqueeze(0), network_input)
+        # temp = self.mpNet(tInput, tobs).data.cpu()
+        # temp = self.denormalize(temp.squeeze(), self.worldSize)
+
+        # traj = np.load('data/dubinsCar/traj/traj_{}.npy'.format(s))
+        # print('Network Output : {}, trajectory value: {}'.format(temp, traj[1,:]))
