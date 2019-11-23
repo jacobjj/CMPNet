@@ -21,6 +21,12 @@ def primitive2word(primitive_length, primitive_type):
         s[i, primitive2word[primitive_type][i]] = length
     return s
 
+def normalize_cost(z):
+    """
+    A function to wrap around -1 and 1
+    """
+    return (z + 1) % (2 ) - 1
+
 
 def CenterRobot(costmap, pixel_ind):
     costmap_data = costmap.get_data()
@@ -30,7 +36,7 @@ def CenterRobot(costmap, pixel_ind):
     full_obs[x_0:x_0 + costmap_dim[1], y_0:y_0 +
              costmap_dim[0]] = costmap_data / 254
     full_obs = full_obs[::3, ::3]
-    full_obs = torch.Tensor(full_obs).unsqueeze(0)
+    full_obs = torch.tensor(full_obs).unsqueeze(0)
     return full_obs
 
 
@@ -95,17 +101,21 @@ class MPNetPlan(MPnetBase):
         : param costmap : A costmap object from bc_gym_planning_env
         : return path list: key points to generate a path
         """
+        render = False
         start = torch.tensor(start, dtype=torch.float)
         goal = torch.tensor(goal, dtype=torch.float)
         path = [start, goal]
-        fig, (axMain, axMini) = plt.subplots(1, 2)
-        figParam = {'axis': axMini, 'pointCloud': pointCloud}
-        for ax in (axMain, axMini):
-            ax.set_xlim([-5, 5])
-            ax.set_ylim([-5, 5])
-        self.plotMainPath(axMain, path, pointCloud)
+        if render:
+            fig, (axMain, axMini) = plt.subplots(1, 2)
+            figParam = {'axis': axMini, 'pointCloud': pointCloud}
+            for ax in (axMain, axMini):
+                ax.set_xlim([-5, 5])
+                ax.set_ylim([-5, 5])
+                self.plotMainPath(axMain, path, pointCloud)
+        else:
+            figParam = None
         # Number of re-planning steps taken.
-        MAX_NEURAL_REPLAN = 10
+        MAX_NEURAL_REPLAN = 5
         step_sz = 0.01
         for t in range(MAX_NEURAL_REPLAN):
             # adaptive step size on replanning attempts
@@ -132,7 +142,7 @@ class MPNetPlan(MPnetBase):
                                               goalNode,
                                               costmap,
                                               IsInCollision,
-                                              maxPoints=50,
+                                              maxPoints=2,
                                               figParam=figParam)
                 # import pdb;pdb.set_trace()
 
@@ -142,24 +152,25 @@ class MPNetPlan(MPnetBase):
                 if len(miniPath) > 2:
                     miniPath = self.removeCollision(miniPath, IsInCollision)
                 print(miniPath)
-
-                axMini.clear()
-                self.plotMainPath(axMini, [], pointCloud)
-                self.plotPoints(axMini, miniPath)
-                for ax in (axMain, axMini):
-                    ax.set_xlim([-5, 5])
-                    ax.set_ylim([-5, 5])
-                plt.pause(1)
+                if render:
+                    axMini.clear()
+                    self.plotMainPath(axMini, [], pointCloud)
+                    self.plotPoints(axMini, miniPath)
+                    for ax in (axMain, axMini):
+                        ax.set_xlim([-5, 5])
+                        ax.set_ylim([-5, 5])
+                    plt.pause(1)
 
                 # append miniPath to path
                 for i, point in enumerate(miniPath):
                     path.insert(marker + i, point.clone())
-                axMain.clear()
-                self.plotMainPath(axMain, path, pointCloud)
-                for ax in (axMain, axMini):
-                    ax.set_xlim([-5, 5])
-                    ax.set_ylim([-5, 5])
-                plt.pause(2)
+                if render:
+                    axMain.clear()
+                    self.plotMainPath(axMain, path, pointCloud)
+                    for ax in (axMain, axMini):
+                        ax.set_xlim([-5, 5])
+                        ax.set_ylim([-5, 5])
+                    plt.pause(2)
 
             # lazy vertex contraction
             print("LVC")
@@ -167,8 +178,10 @@ class MPNetPlan(MPnetBase):
             # The safety check that tests if the path generated is feasible or not.
             if self.feasibility_check(path, IsInCollision):
                 print('feasible, ok!')
+                plt.close()
                 return path
 
+        plt.close()
         return []
 
     def formatInput(self, v):
@@ -192,15 +205,20 @@ class MPNetPlan(MPnetBase):
         tree = 0
         center_obs = CenterRobot(costmap,
                                  costmap.world_to_pixel(start[:2].numpy()))
+        # traj = np.load('data/dubinsCar/traj/traj_304299.npy')
+        # traj = self.normalize(torch.tensor(traj), self.worldSize)
+        # traj = traj.numpy()
         with torch.no_grad():
             for _ in range(maxPoints):
-                network_input = np.concatenate((start, goal))
-                network_input = self.formatInput(network_input)
+                network_input = torch.cat((start, goal),dim=0).reshape(1,-1)
                 tobs, tInput = self.format_input(center_obs.unsqueeze(0), network_input)
                 # word = self.mpNet(tInput, tobs).squeeze().data.cpu()
                 # temp = word2primitive(word, start, 0.6)
                 temp = self.mpNet(tInput, tobs).squeeze().data.cpu()
+                # print("Estimate Loss : {} ".format(self.EstimateLoss(temp.numpy(), traj[1])))
                 temp = self.denormalize(temp, self.worldSize)
+                # print(temp)
+                # print("sampled Point : {}".format(temp))
                 pixel_ind = costmap.world_to_pixel(temp[:2].numpy())
                 if pixel_ind[0]<0 or pixel_ind[1]<0:
                     continue
@@ -212,8 +230,11 @@ class MPNetPlan(MPnetBase):
                 center_obs = CenterRobot(
                     costmap, costmap.world_to_pixel(start[:2].numpy()))
 
-            target_reached = self.steerTo(start.squeeze(), goal.squeeze(),
+                target_reached = self.steerTo(start.squeeze(), goal.squeeze(),
                                           IsInCollision)
+                if target_reached:
+                    break
+        
         if figParam is not None:
             ax = figParam['axis']
             pointCloud = figParam['pointCloud']
@@ -269,3 +290,9 @@ class MPNetPlan(MPnetBase):
             if not IsInCollision(path[i]):
                 new_path.append(path[i].clone())
         return new_path
+
+    def EstimateLoss(self, pred, truth):
+        loss = pred - truth
+        loss[:2] = loss[:2]**2
+        loss[2] = normalize_cost(loss[2])**2
+        return np.sum(loss)
