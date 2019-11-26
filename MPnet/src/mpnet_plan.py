@@ -142,7 +142,7 @@ class MPNetPlan(MPnetBase):
                                               goalNode,
                                               costmap,
                                               IsInCollision,
-                                              maxPoints=2,
+                                              maxPoints=20,
                                               figParam=figParam)
                 # import pdb;pdb.set_trace()
 
