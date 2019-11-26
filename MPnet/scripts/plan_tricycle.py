@@ -35,14 +35,15 @@ if __name__ == "__main__":
 
     MPNetPlan_obj = MPNetPlan(
         modelFile=
-        'data/MPnet_tricycle/points/Adam_lr_3_minus_4_centerObs_relativeTarget/mpnet_epoch_19.pkl',
+        'data/MPnet_tricycle/points/Adam_lr_3_minus_4_centerObs_relativeTarget/mpnet_epoch_99.pkl',
         steerTo=steerTo,
         **network_param,
     )
 
     success = 0
     obstacle_path = 0
-    for s in range(0,100):
+    failed_environments = []
+    for s in range(0,1000):
         env = RandomMiniEnv(draw_new_turn_on_reset=False,
                             seed=s,
                             goal_spat_dist=0.05)
@@ -81,6 +82,8 @@ if __name__ == "__main__":
         if path:
             success += 1
             obstacle_path +=1
+        else:
+            failed_environments.append(s)
         if path and render:
             plt.figure()
             plt.scatter(pointcloud[:, 0], pointcloud[:, 1])
@@ -97,3 +100,4 @@ if __name__ == "__main__":
             plt.close()
 
     print("Successful Paths : {}, Successful MPnet Paths : {} ".format(success, obstacle_path))
+    print("Failed Environments : {}".format(failed_environments))
