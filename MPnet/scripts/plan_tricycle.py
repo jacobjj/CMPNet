@@ -11,6 +11,7 @@ from BC.utils.misc import generateVoxelData
 from BC.scripts.point_cloud import generate_point_cloud
 
 import dubins
+import time
 
 
 def steerTo_env(start, goal, IsInCollision):
@@ -23,19 +24,18 @@ if __name__ == "__main__":
     # s = 304299
     s = 0
     network_param = {
-        'normalize': normalize,
-        'denormalize': unnormalize,
-        'encoderInputDim': [1, 122, 122],
-        'encoderOutputDim': 128,
-        'worldSize': [2.75, 2.75, np.pi],
-        'AE': voxelNet,
-        'MLP': model.MLP,
-        'modelPath': 'data/MPnet_tricycle/points/Adam_lr_3_minus_4_centerObs_relativeTarget'
+        "normalize": normalize,
+        "denormalize": unnormalize,
+        "encoderInputDim": [1, 122, 122],
+        "encoderOutputDim": 128,
+        "worldSize": [2.75, 2.75, np.pi],
+        "AE": voxelNet,
+        "MLP": model.MLP,
+        "modelPath": "data/MPnet_tricycle/points/Adam_lr_3_minus_4_centerObs_relativeTarget_model2",
     }
 
     MPNetPlan_obj = MPNetPlan(
-        modelFile=
-        'data/MPnet_tricycle/points/Adam_lr_3_minus_4_centerObs_relativeTarget/mpnet_epoch_99.pkl',
+        modelFile="data/MPnet_tricycle/points/Adam_lr_3_minus_4_centerObs_relativeTarget_model2/mpnet_epoch_99.pkl",
         steerTo=steerTo,
         **network_param,
     )
@@ -43,19 +43,17 @@ if __name__ == "__main__":
     success = 0
     obstacle_path = 0
     failed_environments = []
+    direct_environments = []
+    total_time = 0
+
     for s in range(0,1000):
-        env = RandomMiniEnv(draw_new_turn_on_reset=False,
-                            seed=s,
-                            goal_spat_dist=0.05)
+        start_time = time.time()
+        env = RandomMiniEnv(draw_new_turn_on_reset=False, seed=s, goal_spat_dist=0.05)
         observation = env.reset()
         costmap = observation.costmap
         robot = env._env._robot
         IsInCollision_env = lambda pose: pose_collides(
-            pose[0],
-            pose[1],
-            pose[2],
-            robot,
-            costmap,
+            pose[0], pose[1], pose[2], robot, costmap
         )
 
         start_node = env._env._state.pose
@@ -74,24 +72,28 @@ if __name__ == "__main__":
             pointcloud,
         )
 
-        if len(path)==2:
+        if len(path) == 2:
             success += 1
+            direct_environments.append(s)
             continue
 
         render = False
         if path:
             success += 1
-            obstacle_path +=1
+            obstacle_path += 1
+            total_time += time.time() - start_time
         else:
             failed_environments.append(s)
+        
         if path and render:
             plt.figure()
             plt.scatter(pointcloud[:, 0], pointcloud[:, 1])
             for p in path:
-                plt.scatter(p[0], p[1], marker='x', color='r')
+                plt.scatter(p[0], p[1], marker="x", color="r")
             for i, _ in enumerate(path[:-1]):
-                p = dubins.shortest_path(tuple(path[i].numpy()),
-                                         tuple(path[i + 1].numpy()), 0.6)
+                p = dubins.shortest_path(
+                    tuple(path[i].numpy()), tuple(path[i + 1].numpy()), 0.6
+                )
                 config, _ = p.sample_many(0.1)
                 config = np.array(config)
                 plt.plot(config[:, 0], config[:, 1])
@@ -99,5 +101,10 @@ if __name__ == "__main__":
             plt.pause(1)
             plt.close()
 
-    print("Successful Paths : {}, Successful MPnet Paths : {} ".format(success, obstacle_path))
+    print("Average Time to plan : {}".format(total_time / (obstacle_path+1)))
+    print(
+        "Successful Paths : {}, Successful MPnet Paths : {} ".format(
+            success, obstacle_path
+        )
+    )
     print("Failed Environments : {}".format(failed_environments))
