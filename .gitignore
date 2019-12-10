@@ -4,3 +4,4 @@ MPnet/data/**
 MPnet/scripts/check_learn_tricycle.py
 test/*
 test_generator/*
+.vscode/**
