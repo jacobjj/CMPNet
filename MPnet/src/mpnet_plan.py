@@ -126,7 +126,7 @@ class MPNetPlan(MPnetBase):
             elif (t > 3):
                 step_sz = step_sz / 2
 
-            print("Plan {}".format(t))
+            #print("Plan {}".format(t))
             for j, _ in enumerate(path[:-1]):
                 steer = self.steerTo(path[j], path[j + 1], IsInCollision)
                 if not steer:
@@ -146,12 +146,12 @@ class MPNetPlan(MPnetBase):
                                               figParam=figParam)
                 # import pdb;pdb.set_trace()
 
-                print("Remove points in Collision")
+                # print("Remove points in Collision")
                 # Remove points that are in collision
-                print(miniPath)
+                # print(miniPath)
                 if len(miniPath) > 2:
                     miniPath = self.removeCollision(miniPath, IsInCollision)
-                print(miniPath)
+                # print(miniPath)
                 if render:
                     axMini.clear()
                     self.plotMainPath(axMini, [], pointCloud)
@@ -173,11 +173,11 @@ class MPNetPlan(MPnetBase):
                     plt.pause(2)
 
             # lazy vertex contraction
-            print("LVC")
+            # print("LVC")
             path = self.lvc(path, IsInCollision)
             # The safety check that tests if the path generated is feasible or not.
             if self.feasibility_check(path, IsInCollision):
-                print('feasible, ok!')
+                # print('feasible, ok!')
                 plt.close()
                 return path
 
