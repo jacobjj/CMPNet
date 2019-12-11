@@ -31,11 +31,11 @@ if __name__ == "__main__":
         "worldSize": [2.75, 2.75, np.pi],
         "AE": voxelNet,
         "MLP": model.MLP,
-        "modelPath": "data/MPnet_tricycle/points/Adam_lr_3_minus_4_centerObs_relativeTarget_model2",
+        "modelPath": "data/MPnet_tricycle/points/Adam_lr_3_minus_4_centerObs_relativeTarget",
     }
 
     MPNetPlan_obj = MPNetPlan(
-        modelFile="data/MPnet_tricycle/points/Adam_lr_3_minus_4_centerObs_relativeTarget_model2/mpnet_epoch_99.pkl",
+        modelFile="data/MPnet_tricycle/points/Adam_lr_3_minus_4_centerObs_relativeTarget/mpnet_epoch_99.pkl",
         steerTo=steerTo,
         **network_param,
     )
@@ -45,7 +45,7 @@ if __name__ == "__main__":
     failed_environments = []
     direct_environments = []
     total_time = 0
-
+    
     for s in range(0,1000):
         start_time = time.time()
         env = RandomMiniEnv(draw_new_turn_on_reset=False, seed=s, goal_spat_dist=0.05)
